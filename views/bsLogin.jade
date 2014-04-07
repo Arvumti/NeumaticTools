@@ -1,0 +1,52 @@
+
+//  1.-Mixins
+    2.-HTML
+
+// ------------------------------------------  1.-Mixins  ------------------------------------------
+mixin menu(menus)
+  each menu, i in menus
+    li(class= menu.active ? 'active' : '')
+      a(href="##{menu.nombre}") #{menu.nombre}
+
+// ------------------------------------------  2.-HTML  ------------------------------------------
+!!!5
+html
+  head
+    title #{title}
+    link(rel='stylesheet', type='text/css', href='/css/foundation.min.css')
+    link(rel='stylesheet', type='text/css', href='/css/font-awesome.css')
+    link(rel='stylesheet', type='text/css', href='/css/style.css')
+
+    script(type='text/javascript', src='/js/jquery-2.0.3.min.js')
+    script(type='text/javascript', src='/js/foundation.min.js')
+    script(type='text/javascript', src='/js/lodash.underscore.min.js')
+    script(type='text/javascript', src='/js/backbone-min.js')
+    script(type='text/javascript', src='/js/mousetrap.min.js')
+    script(type='text/javascript', src='/js/mousetrap-bind-dictionary.min.js')
+    script(type='text/javascript', src='/js/jquery.keyfilter.js')
+    script(type='text/javascript', src='/js/handlebars.js')
+    script(src='/socket.io/socket.io.js')
+    script(type='text/javascript', src='/js/cApp.js')
+  body
+    header
+        p encabezado
+    main#pnlLogin
+        form(action='/' method='post')
+            section(class='collapse panel row')
+                div.small-3.columns
+                    label(for='txtUsuario').prefix Usuario:
+                div.small-9.columns
+                    input(type='text' name='username')#txtUsuario
+                div.small-3.columns
+                    label(for='txtPassword').prefix Password:
+                div.small-9.columns
+                    input(type='password' name='password')#txtPassword
+                div.large-12.columns
+                    button(class='button expand tiny custom-button') Iniciar Sesion
+            
+            section.row
+                if message
+                    div(class='alert-box radius large-12 columns' data-alert) #{message}
+                        a(href='#' class='close') &times;
+    footer
+        p footer

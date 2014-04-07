@@ -1,0 +1,210 @@
+/* 
+ * 0.-Misc
+ *  0.1.-Import - Reset
+ *  0.2.-Variables
+ *  0.3.-Funciones
+ * 1.-Principal
+ * 20.-Global
+ * 21.-Custom
+ * 22.-MediaQueries
+ */
+/*------------------------- 0.-Misc --------------------*/
+/*------------------------- 0.1.-Import - Reset --------------------*/
+/*@import url('http://fonts.googleapis.com/css?family=Quicksand')*/
+/*global-reset()*/
+/*------------------------- 0.2.-Variables --------------------*/
+/*------------------------- 0.3.-Funciones --------------------*/
+/*------------------------- 1.-Principal --------------------*/
+body,
+html {
+  color: #444;
+  font-family: Arial;
+  font-size: 16px;
+  height: 100%;
+  width: 100%;
+}
+body {
+  margin: 0 auto;
+}
+#pnlLogin label {
+  font-size: 1em !important;
+  font-weight: bold !important;
+  text-shadow: 2px 2px 1px #aaa;
+}
+main {
+  height: 100%;
+}
+main aside.side-menu {
+  background-color: rgba(64,130,50,0.8);
+  border-right: 1px solid #ccc;
+  display: inline-block;
+  height: 100%;
+  max-width: 238px;
+  padding: 0.5em 1em;
+  vertical-align: top;
+  width: 20%;
+  -webkit-box-shadow: 1px -5px 15px #222;
+  box-shadow: 1px -5px 15px #222;
+}
+main aside.side-menu .aside-nav {
+  font-weight: bold;
+  list-style-type: none;
+  margin-top: 1em;
+}
+main aside.side-menu .aside-nav a {
+  color: #eee;
+  display: block;
+  text-shadow: 2px 2px 1px #222;
+}
+main aside.side-menu .aside-nav a.active {
+  border-bottom: 1px solid #fff;
+  color: #fff;
+}
+main aside.side-menu .aside-nav li {
+  margin: 0.5em 0;
+}
+main aside.side-menu .aside-nav .side-sub-nav {
+  list-style-type: none;
+  font-size: 0.9em;
+  margin-left: 0.5em;
+}
+main aside.side-menu .main-logo {
+  background-color: #eee;
+  border: 1px solid #bbb;
+  width: 100%;
+}
+main section.main-content {
+  display: inline-block !important;
+  height: 100%;
+  margin-left: 2%;
+  padding: 0.5em 1em;
+  vertical-align: top;
+  width: 78%;
+}
+main section.main-content .sub-content {
+  display: none;
+}
+/*------------------------- 20.-Global --------------------*/
+.borderedHR {
+  border: 1px solid #00f;
+}
+.borderedSP,
+.borderedSP * {
+  border: 1px solid #00f;
+}
+button.alert {
+  background-color: #bf1c2d !important;
+}
+.cpointer {
+  cursor: pointer;
+}
+.custom-button {
+  font-size: 1em !important;
+  font-weight: bold !important;
+  text-shadow: 2px 2px 1px #222;
+}
+.index-primary {
+  z-index: 999;
+}
+.isHidden {
+  display: none;
+}
+.isNumber {
+  text-align: right;
+}
+.limit-text {
+  overflow: hidden;
+  max-width: 1px;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#loading {
+  border: 1px solid #f00 !important;
+  background-color: rgba(20,20,20,0.5);
+  height: 100%;
+  left: 0;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: 9999;
+}
+#loading span {
+  border: 1px solid #222 !important;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  background-color: rgba(250,250,250,0.9);
+  font-weight: bold;
+  padding: 1em;
+  position: relative;
+  top: 45%;
+}
+#loading span img {
+  position: relative;
+  width: 2em;
+}
+table td.icons {
+  padding: 0 !important;
+  text-align: center;
+}
+.row {
+  max-width: 100%;
+}
+.text-center {
+  text-align: center;
+}
+.text-left {
+  text-align: left;
+}
+.text-right {
+  padding-right: 0.3em;
+  text-align: right;
+}
+.twitter-typeahead {
+  display: block;
+  width: 100%;
+}
+/*------------------------- 21.-Custom --------------------*/
+.regular-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: #fafafa;
+  border: 1px solid #cacece;
+  padding: 9px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  display: block;
+  position: relative;
+}
+.regular-checkbox:checked {
+  background-color: #e9ecee;
+  border: 1px solid #adb8c0;
+  color: #99a1a7;
+}
+.regular-checkbox:checked:after {
+  content: '\2714';
+  font-size: 14px;
+  position: absolute;
+  top: 0px;
+  left: 3px;
+  color: #99a1a7;
+}
+.big-checkbox {
+  padding: 18px;
+}
+.big-checkbox:checked:after {
+  font-size: 28px;
+  left: 6px;
+}
+/*------------------------- 22.-MediaQueries --------------------*/
+@media screen and (max-width: 640px) {
+  aside.side-menu {
+    display: none !important;
+  }
+  section.main-content {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}

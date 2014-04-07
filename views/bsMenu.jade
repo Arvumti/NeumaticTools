@@ -1,0 +1,255 @@
+
+//  1.-Mixins
+    2.-HTML
+
+// ------------------------------------------  1.-Mixins  ------------------------------------------      
+mixin tabla(id, titulo, ths)
+    h3 #{titulo}
+    
+    table(id='#{id}').row
+        thead
+            tr
+                each th, i in ths
+                    if th.cla === undefined
+                        th #{th.hd}
+                    else
+                        th(class='#{th.cla}') #{th.hd}
+        tbody
+        
+    br
+    div.row
+        button(type='button' class='button tiny expand success custom-button')#btnAgregar
+            i(class='fa fa-plus') &nbsp
+            span.show-for-medium-up Agregar
+
+// ------------------------------------------  2.-HTML  ------------------------------------------
+!!!5
+html
+  head
+    title #{title}
+    link(rel='stylesheet', type='text/css', href='/css/foundation.min.css')
+    link(rel='stylesheet', type='text/css', href='/css/font-awesome.css')
+    link(rel='stylesheet', type='text/css', href='/css/typeahead.css')
+    link(rel='stylesheet', type='text/css', href='/css/style.css')
+
+    script(type='text/javascript', src='/js/jquery-2.0.3.min.js')
+    script(type='text/javascript', src='/js/typeahead.js')
+    script(type='text/javascript', src='/js/jquery.nicescroll.min.js')
+    script(type='text/javascript', src='/js/foundation.min.js')
+    script(type='text/javascript', src='/js/lodash.underscore.min.js')
+    script(type='text/javascript', src='/js/backbone-min.js')
+    script(type='text/javascript', src='/js/mousetrap.min.js')
+    script(type='text/javascript', src='/js/mousetrap-bind-dictionary.min.js')
+    script(type='text/javascript', src='/js/jquery.keyfilter.js')
+    script(type='text/javascript', src='/js/handlebars.js')
+    script(type='text/javascript', src='/js/cApp.js')
+    
+    script(id='tmp_tr_diezmo', type='text/x-handlebars-template')
+        td.icons
+            i(class='fa fa-edit cpointer fa-2x isEdit')
+        td {{idPersona.nombre.apaterno}} {{idPersona.nombre.amaterno}} {{idPersona.nombre.nombre}}
+        td {{cantidad}}
+        td {{parseDate fecha}}
+        td {{maskSQ isSemana}}
+    
+    script(id='tmp_tr_persona', type='text/x-handlebars-template')
+        td.icons 
+            i(class='fa fa-edit cpointer fa-2x isEdit')
+            span &nbsp|&nbsp
+            i(class='fa fa-trash-o cpointer fa-2x isDelete')
+        td {{nombre.apaterno}} {{nombre.amaterno}} {{nombre.nombre}}
+        td {{telefono}}
+        td {{parseDate cumpleanios}}
+        td {{facebook}}
+        td.show-for-large-up {{direccion.calle}} {{direccion.numero}} {{direccion.colonia}}
+  
+  body
+    header
+        nav(class='top-bar show-for-small-only' data-topbar)
+            ul.title-area
+                li.name
+                    h1
+                        a CAVD
+                li.toggle-topbar.menu-icon
+                    a(href='#') Menu
+            
+            section.top-bar-section
+                ul(class='left')
+                    li
+                        a(href='#diezmos')
+                            i(class='fa fa-envelope-o fa-inverse') &nbsp
+                            span Diezmos
+                    li
+                        a(href='#visitas')
+                            i(class='fa fa-group fa-inverse') &nbsp
+                            span Visitas
+                ul.right
+                    li.divider
+                    li.has-dropdown
+                        a(href='#')
+                            i(class='fa fa-user fa-inverse') &nbsp
+                            span Admin
+                        ul.dropdown
+                            li
+                                a(href='#')
+                                    i(class='fa fa-sign-out fa-inverse') &nbsp
+                                    span Cerrar sesion
+    main
+        aside(class='side-menu')
+            a(href='img/cavd.png' class='th [radius]')
+                img(src='img/cavd.png').main-logo
+            
+            ul(class='fa-ul aside-nav')
+                li.user
+                    a(href='#') Admin
+                        i(class='fa fa-user fa-li')
+                    ul(class='fa-ul side-sub-nav isHidden')
+                        li
+                            a(href='#logout') Cerrar Sesion
+                                i(class='fa fa-sign-out fa-li')
+                li.menu
+                    a(href='#diezmos') Diezmos
+                        i(class='fa fa-envelope-o fa-li')
+                li.menu
+                    a(href='#visitas') Visitas
+                        i(class='fa fa-group fa-li')
+                        
+        section(class='main-content')
+            section#pnlDiezmos.sub-content
+                +tabla('gvDiezmos', 'Diezmos', [{hd:''}, {hd:'Persona'}, {hd:'Cantidad'}, {hd:'Fecha'}, {hd:'S/Q'}])
+                    
+            section#pnlPersonas.sub-content
+                +tabla('gvPersonas', 'Personas', [{hd:''}, {hd:'Nombre'}, {hd:'Telefono'}, {hd:'Cumpleaños'}, {hd:'Facebook'}, {hd:'Direccion', cla:'show-for-large-up'}])
+                            
+    div(data-reveal)#popSaveDiezmo.reveal-modal
+        section.pop-header
+            h2 Agregar Diezmo
+        section.pop-body
+            form(data-abide)
+                div.row
+                    div(class='small-12 columns')
+                        label Persona:
+                            input(type='text')#tyaPersonas
+                            small(class='error error-typeahead') Capture un nombre valido
+                div.row
+                    div(class='small-12 medium-5 columns')
+                        label Fecha:
+                            input(type='date' required)#datFecha
+                            small.error Seleccione la fecha
+                                                
+                    div(class='small-10 medium-5 columns')
+                        label Cantidad:
+                            input(type='text' placeholder='0.00' pattern='integer' required)#txtCantidad.text-right
+                            small.error Ej: 150, 150.50
+                    
+                    div(class='small-2 medium-2 columns')
+                        label S/Q:
+                            input(type='checkbox' class='regular-checkbox big-checkbox' checked)#cbxSQ
+                
+                div.row
+                    div(class='small-12 columns')
+                        label Comentarios:
+                            textarea#txaComentarios
+        section.pop-footer
+            div.row
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny success custom-button')#btnAceptar
+                        i(class='fa fa-check') &nbsp
+                        span.show-for-medium-up Aceptar
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny alert custom-button')#btnCancelar
+                        i(class='fa fa-ban') &nbsp
+                        span.show-for-medium-up Cancelar
+    
+    div(data-reveal)#popSavePersona.reveal-modal
+        section.pop-header
+            h2 Agregar Persona
+        section.pop-body
+            form(data-abide)
+                div.row
+                    div(class='small-12 medium-4 columns')
+                        label Nombre:
+                            input(type='text' required)#txtNombre
+                            small.error Tiene que capturar el nombre
+                    div(class='small-12 medium-4 columns')
+                        label Apellido Paterno:
+                            input(type='text')#txtAPaterno
+                    div(class='small-12 medium-4 columns')
+                        label Apellido Materno:
+                            input(type='text')#txtAMaterno
+                
+                div.row
+                    div(class='small-10 medium-9 columns')
+                        label Calle:
+                            input(type='text')#txtCalle
+                    div(class='small-2 medium-3 columns')
+                        label Numero:
+                            input(type='text')#txtNumero
+                
+                div.row
+                    div(class='small-12 medium-9 columns')
+                        label Colonia:
+                            input(type='text')#txtColonia
+                    div(class='small-12 medium-3 columns')
+                        label Municipio:
+                            input(type='text' value='Durango')#txtMunicipio
+                
+                div.row
+                    div(class='small-12 columns')
+                        label Facebook:
+                            input(type='text')#txtFacebook
+                
+                div.row
+                    div(class='small-6 columns')
+                        label Telefono:
+                            input(type='text')#txtTelefono
+                                
+                    div(class='small-6 columns')
+                        label cboTipo:
+                            select#cboTipo
+                                option(value='1') Consolidado
+                                option(value='2') Visita
+                
+                div.row
+                    div(class='small-12 medium-6 columns')
+                        label Cumpleaños:
+                            input(type='date')#datCumpleanios
+                            
+                    div(class='small-12 medium-6 columns')
+                        label Fecha de Ingreso:
+                            input(type='date')#datFeIngreso
+                
+                div.row
+                    div(class='small-12 columns')
+                        label Persona que la invito:
+                            input(type='text')#tyaPersonas
+                            
+        section.pop-footer
+            div.row
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny success custom-button')#btnAceptar
+                        i(class='fa fa-check') &nbsp
+                        span.show-for-medium-up Aceptar
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny alert custom-button')#btnCancelar
+                        i(class='fa fa-ban') &nbsp
+                        span.show-for-medium-up Cancelar
+                        
+    div(class='reveal-modal medium' data-reveal)#popMessage
+        section.modal-header
+            h3.modal-title
+            a.close-reveal-modal &#215;
+        section(class='modal-body text-left')
+        br
+        section(class='modal-footer text-right')
+            div.row
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny success custom-button')#btnAceptar
+                        i(class='fa fa-check') &nbsp
+                        span.show-for-medium-up Aceptar
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny alert custom-button')#btnCancelar
+                        i(class='fa fa-ban') &nbsp
+                        span.show-for-medium-up Cancelar
+            
+    footer pie de pagina

@@ -1,0 +1,2 @@
+Log:
+Tipo: 1.-Inicio de sesion
