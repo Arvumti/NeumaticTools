@@ -17,24 +17,280 @@ var app = {},
     repos = '';
 
 /* ----------------------------------------- 1.-Modelos ----------------------------------------- */
-
+app.MoCliente = Backbone.Model.extend({
+    url: function() {
+        var ruta = 'SaveCliente' + (this.id ? '/' + this.id : '');
+        return ruta;
+    },
+    defaults: {
+        visible: 1
+    }
+});
+app.MoEquipo = Backbone.Model.extend({
+    url: function() {
+        var ruta = 'SaveEquipo' + (this.id ? '/' + this.id : '');
+        return ruta;
+    },
+    defaults: {
+        visible: 1
+    }
+});
 /* ----------------------------------------- 2.-Colecciones ----------------------------------------- */
+window.CoClientesList = Backbone.Collection.extend({
+    model: app.MoCliente,
+    url: 'GetClientes'
+});
+window.CoEquiposList = Backbone.Collection.extend({
+    model: app.MoEquipo,
+    url: 'GetEquipos'
+});
 
+app.CoClientes = new window.CoClientesList();
+app.CoEquipos = new window.CoEquiposList();
 /* ----------------------------------------- 3.-Vistas ----------------------------------------- */
 app.vwMain = Backbone.View.extend({
     el: 'body',
-    events: {},
-    initialize:function(){
+    events: {
+        'click .secciones a': 'navigate'
+    },
+    initialize: function() {
+        this.main = this.$el.children('main');
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    navigate: function(e) {
+        //e.preventDefault();
+        //e.stopPropagation();
         
+        //Backbone.history.navigate('/captura', {trigger:true});
+    }
+});
+
+app.ViCliente = Backbone.View.extend({
+    el: '#pnlCliente',
+    events: {},
+    initialize: function() {        
+        this.crud = 1;
+        this.form = this.$el.children('form');
+        
+        this.txtNombre = this.form.find('#txtNombre');
+        this.txtAPaterno = this.form.find('#txtAPaterno');
+        this.txtAMaterno = this.form.find('#txtAMaterno');
+        this.txtCalle = this.form.find('#txtCalle');        
+        this.txtNumero = this.form.find('#txtNumero');
+        this.txtColonia = this.form.find('#txtColonia');
+        this.txtMunicipio = this.form.find('#txtMunicipio');
+        this.txtRFC = this.form.find('#txtRFC');
+        this.txtTelefono = this.form.find('#txtTelefono');
+        this.txtIdentificacion = this.form.find('#txtIdentificacion');
+    },
+    clear: function() {
+        app.vi.Cliente.form[0].reset();
+    },
+    hide: function() {
+        this.fakeModel = null;
+        this.crud = 1;
+        this.$el.foundation('reveal', 'close');
+    },
+    render: function() {
+        this.clear();
+        this.crud = 1;
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
+    },
+    show: function(model) {
+        this.clear();
+        this.crud = 2;
+        this.fakeModel = model;
+        this.setData(model.toJSON());
+        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    click_btnCancelar: function() {
+        switch(this.crud) {
+            case 1:
+                Backbone.history.navigate('/', {trigger:true});
+                break;
+            default:
+                this.hide();
+                break;
+        }
+    },
+    click_btnGuardar: function(json) {
+        var json = this.getData();
+        
+        switch(this.crud) {
+            case 1:
+                app.CoOficios.create(json, {error:error, wait:true});
+                this.clear();
+                break;
+            case 2:
+                this.fakeModel.save(json);
+                this.hide();
+                break;
+        }
+        
+        function error(data, xrh) {
+            console.log(data);
+            console.log(xrh);
+            
+            alert(xrh.status + ' - ' + xrh.statusText + ' : ' + xrh.responseText);
+        }
+    },
+    click_btnLimpiar: function() {
+        this.clear();
+    },
+    getData: function() {
+        var json = {
+            nombre: {
+                nombre: this.txtNombre.val(),
+                apaterno: this.txtAPaterno.val(),
+                amaterno: this.txtAMaterno.val()
+            },
+            direccion: {
+                calle: this.txtCalle.val(),
+                numero: this.txtNumero.val(),
+                colonia: this.txtColonia.val(),
+                municipio: this.txtMunicipio.val()
+            },
+            rfc: this.txtRFC.val(),
+            telefono: this.txtTelefono.val(),
+            identificacion: this.txtIdentificacion.val()
+        };
+        return json;
+    },
+    setData: function(json) {        
+        this.txtNombre.val(json.nombre.nombre);
+        this.txtAPaterno.val(json.nombre.apaterno);
+        this.txtAMaterno.val(json.nombre.amaterno);
+        this.txtCalle.val(json.direccion.calle);
+        this.txtNumero.val(json.direccion.numero);
+        this.txtColonia.val(json.direccion.colonia);
+        this.txtMunicipio.val(json.direccion.municipio);
+        this.txtRFC.val(json.rfc);
+        this.txtTelefono.val(json.telefono);
+        this.txtIdentificacion.val(json.identificacion);
+    }
+});
+app.ViEquipo = Backbone.View.extend({
+    el: '#pnlEquipo',
+    events: {},
+    initialize: function() {
+        var that = this;
+        
+        this.crud = 1;
+        this.form = this.$el.children('form');
+        
+        this.txtNE = this.form.find('#txtNE');
+        this.tyaFamilias = this.form.find('#tyaFamilias');
+        this.txtNombre = this.form.find('#txtNombre');
+        this.txtMarca = this.form.find('#txtMarca');
+        this.txaDescripcion = this.form.find('#txaDescripcion');        
+        this.txtDiasTrabajo = this.form.find('#txtDiasTrabajo');
+        this.txtPrecioDia = this.form.find('#txtPrecioDia');
+        this.txtCantidad = this.form.find('#txtCantidad');
+        
+        app.ut.getJson({url:'GetFamilias', done:done});
+        
+        function done(data) {
+            app.cbos.familias = data;                            
+            app.ut.tyAhead(that.tyaFamilias, '/GetFamilias');
+        }
+    },
+    clear: function() {
+        app.vi.Equipo.form[0].reset();
+    },
+    hide: function() {
+        this.fakeModel = null;
+        this.crud = 1;
+        this.$el.foundation('reveal', 'close');
+    },
+    render: function() {
+        this.clear();
+        this.crud = 1;
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
+    },
+    show: function(model) {
+        this.clear();
+        this.crud = 2;
+        this.fakeModel = model;
+        this.setData(model.toJSON());
+        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    click_btnCancelar: function() {
+        switch(this.crud) {
+            case 1:
+                Backbone.history.navigate('/', {trigger:true});
+                break;
+            default:
+                this.hide();
+                break;
+        }
+    },
+    click_btnGuardar: function(json) {
+        var json = this.getData();
+        
+        switch(this.crud) {
+            case 1:
+                app.CoOficios.create(json, {error:error, wait:true});
+                this.clear();
+                break;
+            case 2:
+                this.fakeModel.save(json);
+                this.hide();
+                break;
+        }
+        
+        function error(data, xrh) {
+            console.log(data);
+            console.log(xrh);
+            
+            alert(xrh.status + ' - ' + xrh.statusText + ' : ' + xrh.responseText);
+        }
+    },
+    click_btnLimpiar: function() {
+        this.clear();
+    },
+    getData: function() {
+        var json = {
+            sku             : this.txtNE.val(),
+            idFamilia       : this.tyaFamilias.val(),
+            nombre          : this.txtNombre.val(),
+            marca           : this.txtMarca.val(),
+            descripcion     : this.txaDescripcion.val(),
+            diasTrabajados  : this.txtDiasTrabajo.val(),
+            precioDia       : this.txtPrecioDia.val(),
+            cantidad        : this.txtCantidad.val()
+        };
+        return json;
+    },
+    setData: function(json) {        
+        this.txtNE.val(json.sku);
+        this.tyaFamilias.val(json.idFamilia);
+        this.txtNombre.val(json.nombre);
+        this.txtMarca.val(json.marca);
+        this.txaDescripcion.val(json.descripcion);
+        this.txtDiasTrabajo.val(json.diasTrabajados);
+        this.txtPrecioDia.val(json.precioDia);
+        this.txtCantidad.val(json.direccion.cantidad);
     }
 });
 /* ----------------------------------------- 4.-Rutas ----------------------------------------- */
 app.router = Backbone.Router.extend({
     routes: {
-        ''          : 'index'
+        ''          : 'index',        
+        'cliente'   : 'cliente',
+        'equipo'    : 'equipo'
     },
     index: function() {
-        
+        $('.active-view').addClass('isHidden').hide()
+    },
+    cliente: function() {
+        $('.active-view').addClass('isHidden').hide();
+        app.vi.Cliente.render()
+    },
+    equipo: function() {
+        $('.active-view').addClass('isHidden').hide();
+        app.vi.Equipo.render();
     }
 });
 /* ----------------------------------------- 5.-Load ----------------------------------------- */
@@ -50,11 +306,15 @@ function inicio(){
 		}
 	});
     
+    new app.router;
 	app.ut = new utilerias();
     app.templates = new templates();
     
-    app.vw = {
-        Main: new app.vwMain()
+    app.cbos = {};
+    app.vi = {
+        Main: new app.vwMain(),
+        Cliente: new app.ViCliente(),
+        Equipo: new app.ViEquipo()
 	};
     
 	/*app.keytrap = new keytrap();
@@ -64,10 +324,11 @@ function inicio(){
 	app.socket = io.connect('http://localhost:3000');
 	app.socket.on(app.ns.agSearchDatos, agSearchDatos);
 	app.socket.on(app.ns.cvSave, saveVenta);
-	app.socket.on(app.ns.GetArticulo, addArticulo);*/    
+	app.socket.on(app.ns.GetArticulo, addArticulo);*/
     
-    new app.router;
-    Backbone.history.start();
+    Backbone.history.start({
+        root: '/'
+    });
 }
 
 /* ----------------------------------------- 6.-Funciones Sockets ----------------------------------------- */
@@ -443,12 +704,11 @@ function utilerias() {
 	}
         
     function Typeahead(elem, dir) {
-        var arr = []; 
-        app.CoPersonas.each(function(elem) {
-            var nombreC = elem.get('nombre').apaterno + ' ' + elem.get('nombre').amaterno + ' ' + elem.get('nombre').nombre;
-            
-            arr.push({_id:elem.get('_id'), nombre:elem.get('nombre'), nombreC:nombreC}) ;
-        });
+        var arr = [];
+        for(var i = 0; i < app.cbos.familias.length; i++) {
+            var familia = app.cbos.familias[i];
+            arr.push({_id:familia._id, nombre:familia.nombre, nombreC:familia.nombre});
+        }
         
         var nombres = new Bloodhound({
           datumTokenizer: function(datum) {
@@ -461,7 +721,7 @@ function utilerias() {
         nombres.initialize();
         
         elem.typeahead(null, {
-            name: 'personas',
+            name: 'familias',
             displayKey: 'nombreC',
             source: nombres.ttAdapter()/*function(query, process) {
                 console.log(query)
@@ -499,8 +759,8 @@ function utilerias() {
 }
 
 function templates(){
-	Handlebars.registerHelper('maskSQ', function(sq){
-		return sq ? 'S' : 'Q';
+	Handlebars.registerHelper('GetTipo', function(){
+		return this.tipo == 1;
 	});
     
     Handlebars.registerHelper('parseDate', function(fecha){
@@ -511,13 +771,13 @@ function templates(){
 	});
     
 	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
-        tr_diezmo = Handlebars.compile($('#tmp_tr_diezmo').html()),
-        tr_persona = Handlebars.compile($('#tmp_tr_persona').html())
+        cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
+        cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html())
         ;
 
 	return {
-        tr_diezmo: tr_diezmo,
-		tr_persona: tr_persona
+        alertas: alertas,
+        cbo: cbo
 	}
 }
 /* ----------------------------------------- 8.-Templates ----------------------------------------- */

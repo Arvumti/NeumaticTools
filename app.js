@@ -89,6 +89,22 @@ app.get('/jData', /*ensureAuthenticated,*/ function (req, res){
     });
 });
 
+app.get('/GetFamilias', function(req, res) {
+    
+    mongo.familias.find({}, function (err, documents) {
+        console.log('----------------------------fetch familias mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(documents);
+            res.json(documents);
+        }
+    });
+    
+});
+
 app.get('/GetPersonas/All', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch personas');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
@@ -162,63 +178,6 @@ app.delete('/SavePersona/:id', /*ensureAuthenticated,*/ function(req, res) {
             res.json({ok:1});
     });
 });
-
-app.get('/GetDiezmos/All', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch diezmos');
-    
-    mongo.diezmos.find({}).populate('idPersona', {'nombre':1}).exec(function(err, documents) {
-        console.log('----------------------------fetch diezmos mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(documents);
-            res.json(documents);
-        }
-    });
-});
-app.post('/SaveDiezmo', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('save diezmo');
-    console.log(req.body);
-    
-    var json = req.body;
-    json.idPersona = json.idPersona._id;
-    
-    var diezmo = new mongo.diezmos(json);
-    diezmo.save(function(err, document) {
-        console.log('----------------------------save diezmo mongo----------------------------------');
-        
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(document);
-            res.json({_id:document._id});
-        }
-    });
-});
-app.put('/SaveDiezmo/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update diezmo');
-    console.log(req.body);
-    
-    var id = req.body._id.toString(),
-        json = req.body;
-    
-    json.idPersona = json.idPersona._id;
-    delete json._id;
-    
-    mongo.diezmos.update({_id:id}, json, {multi:false}, function(err) {
-        console.log('----------------------------update persona mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else
-            res.send();
-    });
-});
 /* ------------------------------- 3.-MongoDB ------------------------------- */
 mongoose.connect('mongodb://localhost/neumatics');
 var db = mongoose.connection,
@@ -227,50 +186,69 @@ db.on('error', console.error.bind(console, 'conection error:'));
 db.once('open', function callback(){    
 	var ScUsuarios = mongoose.Schema({
 			usuario 	: String,
-			password	: String,
+			password	: String
 		}, {versionKey: false}),
-		ScLogs = mongoose.Schema({
-			evento       : String,
-			tipo         : Number,
-			idUsuario    : mongoose.Schema.Types.ObjectId
+		ScClientes = mongoose.Schema({
+			nombre          : {
+                                nombre 		: String,
+                                apaterno 	: String,
+                                amaterno 	: String
+                            },
+            direccion       : {
+                                calle 		: String,
+                                numero      : String,
+                                colonia 	: String,
+                                municipio 	: String
+                            },
+            rfc             : String,
+            telefono        : String,
+            identificacion  : String
 		}, {versionKey: false}),
-		ScPersonas = mongoose.Schema({
-			nombre      : {
-                            nombre 		: String,
-                            apaterno 	: String,
-                            amaterno 	: String
-                        },
-			direccion 	: {
-                            calle 		: String,
-                            numero      : String,
-                            colonia 	: String,
-                            municipio 	: String
-                        },
-            facebook    : String,
-            telefono    : String,
-            cumpleanios : Date,
-			feIngreso   : Date,
-            tipo        : Number,
-            invitado    : {
+        ScEquipos = mongoose.Schema({
+            sku             : String,
+            nombre          : String,
+            descripcion     : String,
+            descBaja        : String,
+            marca           : String,
+            precioDia       : Number,
+            diasTrabajados  : Number,
+            cantidad        : Number,
+            activo          : Boolean,
+            idFamilia       : {
+                                type    : mongoose.Schema.Types.ObjectId, 
+                                ref     : 'familias'
+                            }
+		}, {versionKey: false}),
+        ScFamilias = mongoose.Schema({
+            sku     : String,
+            nombre  : String,
+            tipo    : Number
+		}, {versionKey: false}),
+        ScContratos = mongoose.Schema({
+			folio: Number,
+			idCliente   : {
                             type    : mongoose.Schema.Types.ObjectId, 
-                            ref     : 'personas'
-                        }
-		}, {versionKey: false}),
-        ScDiezmos = mongoose.Schema({
-			idPersona      : {
-                                type    : mongoose.Schema.Types.ObjectId,
-                                ref     : 'personas'
-                         },
-			cantidad     : Number,
-			isSemana     : Boolean,
-            fecha        : Date,
-			comentario   : String
+                            ref     : 'clientes'
+                        },
+            idEquipo    : {
+                            type    : mongoose.Schema.Types.ObjectId, 
+                            ref     : 'equipos'
+                        },
+            obra        : {
+                            nombre: String,
+                            telefono: String
+                        },
+            accesorios  : String,
+            feIni       : Date,
+            recibio     : String,
+            monto:Number
 		}, {versionKey: false});
 
 	mongo.usuarios = mongoose.model('usuarios', ScUsuarios);
-	mongo.logs = mongoose.model('logs', ScLogs);
-    mongo.personas = mongoose.model('personas', ScPersonas);
-	mongo.diezmos = mongoose.model('diezmos', ScDiezmos);
+	mongo.clientes = mongoose.model('clientes', ScClientes);
+    mongo.equipos = mongoose.model('equipos', ScEquipos);
+    mongo.familias = mongoose.model('familias', ScFamilias);
+	mongo.contratos = mongoose.model('contratos', ScContratos);
 });
 
 /* ------------------------------- 4.-SockeIO ------------------------------- */
