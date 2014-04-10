@@ -48,6 +48,26 @@ html
         {{#data}}
         option(data-ne='{{sku}}' id='{{_id}}') {{nombre}}        
         {{/data}}
+        
+    script(id='tmp_tr_equipo', type='text/x-handlebars-template')
+        td.icons
+            i(class='fa fa-repeat')
+            span  | 
+            i(class='fa fa-trash-o')
+        td NT-{{sku}}
+        td {{nombre}}
+        td {{marca}}
+        td {{idFamilia.nombre}}
+        
+    script(id='tmp_tr_cliente', type='text/x-handlebars-template')
+        td.icons
+            i(class='fa fa-repeat')
+            span  | 
+            i(class='fa fa-trash-o')
+        td {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}}
+        td {{rfc}}
+        td {{telefono}}
+        td {{direccion.municipio}}
   
   body
     header
@@ -55,26 +75,57 @@ html
             ul.title-area
                 li.name
                     h1
-                        a NT
+                        a(href='#') NT
                 li.toggle-topbar.menu-icon
                     a(href='#') Menu
             
             section.top-bar-section
                 ul(class='left')
-                    li
-                        a(href='#equipo')
+                    li.has-dropdown
+                        a(href='#equipo/alta')
                             i(class='fa fa-cogs fa-inverse') &nbsp
-                            span Equipo
-                    li
-                        a(href='#cliente')
+                            | Equipo
+                        ul.dropdown
+                            li
+                                a(href='#equipo/alta')
+                                    i(class='fa fa-plus') &nbsp
+                                    | Alta
+                            li
+                                a(href='#equipo/consulta')
+                                    i(class='fa fa-list') &nbsp
+                                    | Consulta
+                    li.has-dropdown
+                        a(href='#cliente/alta')
                             i(class='fa fa-group fa-inverse') &nbsp
-                            span Clientes
+                            | Clientes
+                        ul.dropdown
+                            li
+                                a(href='#cliente/alta')
+                                    i(class='fa fa-plus') &nbsp
+                                    | Alta
+                            li
+                                a(href='#cliente/consulta')
+                                    i(class='fa fa-list') &nbsp
+                                    | Consulta
+                    li.has-dropdown
+                        a(href='#contrato/alta')
+                            i(class='fa fa-file fa-inverse') &nbsp
+                            | Contratos
+                        ul.dropdown
+                            li
+                                a(href='#contrato/alta')
+                                    i(class='fa fa-plus') &nbsp
+                                    | Alta
+                            li
+                                a(href='#contrato/consulta')
+                                    i(class='fa fa-list') &nbsp
+                                    | Consulta
                 ul.right
                     li.divider
                     li.has-dropdown
                         a(href='#')
                             i(class='fa fa-user fa-inverse') &nbsp
-                            span Admin
+                            | Admin
                         ul.dropdown
                             li
                                 a(href='#')
@@ -82,70 +133,23 @@ html
                                     span Cerrar sesion
     br
     main
-        section(class='reveal-modal' data-reveal)#pnlEquipo
-            form.row
-                div(class='small-12 columns')
-                    h3 Equipo
-                
-                div(class='small-12 medium-6 columns')
-                    label No. Ecomonomico
-                        div(class='row collapse')
-                            div(class='small-3 columns')
-                                span(class='prefix') NT-
-                            div(class='small-9 columns')
-                                input(type='text' placeholder='Numero economico...')#txtNE
-                div(class='small-12 medium-6 columns')
-                    label Familia:
-                        input(type='text')#tyaFamilias
-                
-                div(class='small-12 medium-6 columns')
-                    label Nombre:
-                        input(type='text' placeholder='Nombre...')#txtNombre
-                div(class='small-12 medium-6 columns')
-                    label Marca:
-                        input(type='text' placeholder='Marca...')#txtMarca
-                
-                div(class='small-12 columns')
-                    label Descripcion:
-                        textarea(placeholder='Descripcion...')#txaDescripcion
-                
-                div(class='small-12 medium-4 columns')
-                    label Dias trabajados:
-                        input(type='text' placeholder='Dias trabajados...')#txtDiasTrabajo
-                div(class='small-12 medium-4 columns')
-                    label Precio por dia:
-                        input(type='text' placeholder='Precio por dia...')#txtPrecioDia
-                div(class='small-12 medium-4 columns')
-                    label Inventario:
-                        input(type='text' placeholder='Cantidad existente...')#txtCantidad
-                
-                div(class='small-12 columns')
-                    button(type='button' class='btn tiny success')#btnGuardar
-                        i(class='fa fa-check')
-                        |  Guardar
-                    &nbsp
-                    button(type='button' class='btn tiny')#btnLimpiar
-                        i(class='fa fa-magic')
-                        |  Limpiar
-                    &nbsp
-                    button(type='button' class='btn tiny alert')#btnCancelar
-                        i(class='fa fa-ban')
-                        |  Cancelar
-
         section(class='reveal-modal' data-reveal)#pnlCliente
-            form.row
+            form(data-abide).row
                 div(class='small-12 columns')
                     h3 Cliente
                 
                 div(class='small-12 medium-4 columns')
                     label Nombres:
-                        input(type='text' placeholder='Nombre...')#txtNombre
+                        input(type='text' placeholder='Nombres...' required)#txtNombre
+                        small.error El nombre es requerido
                 div(class='small-12 medium-4 columns')
                     label Apellido paterno:
-                        input(type='text' placeholder='Apellido paterno...')#txtAPaterno
+                        input(type='text' placeholder='Apellido paterno...' required)#txtAPaterno
+                        small.error El apellido paterno es requerido
                 div(class='small-12 medium-4 columns')
                     label Apellido materno:
-                        input(type='text' placeholder='Apellido materno...')#txtAMaterno
+                        input(type='text' placeholder='Apellido materno...' required)#txtAMaterno
+                        small.error El apellido materno es requerido
                 
                 div(class='small-10 columns')
                     label Calle:
@@ -170,7 +174,61 @@ html
                 
                 div(class='small-12 columns')
                     label Identificacion:
-                        input(type='text' placeholder='IFE, Pasaporte, Licencia de manejo, etc...')#txtIdentificacion
+                        input(type='text' placeholder='IFE, Pasaporte, Licencia de manejo, etc...' required)#txtIdentificacion
+                        small.error El numero de indentificacion es requerido
+                        
+                div(class='small-12 columns')
+                    button(type='button' class='btn tiny success')#btnGuardar
+                        i(class='fa fa-check')
+                        |  Guardar
+                    &nbsp
+                    button(type='button' class='btn tiny')#btnLimpiar
+                        i(class='fa fa-magic')
+                        |  Limpiar
+                    &nbsp
+                    button(type='button' class='btn tiny alert')#btnCancelar
+                        i(class='fa fa-ban')
+                        |  Cancelar
+        section(class='reveal-modal' data-reveal)#pnlEquipo
+            form(data-abide).row
+                div(class='small-12 columns')
+                    h3 Equipo
+                
+                div(class='small-12 medium-6 columns')
+                    label Familia:
+                        input(type='text')#tyaFamilias
+                div(class='small-12 medium-6 columns')
+                    label No. Ecomonomico
+                        div(class='row collapse')
+                            div(class='small-3 columns')
+                                span(class='prefix') NT-
+                            div(class='small-9 columns')
+                                input(type='text' placeholder='Numero economico...' required)#txtNE
+                                small.error El numero economico es requerido
+                                
+                div(class='small-12 medium-6 columns')
+                    label Nombre:
+                        input(type='text' placeholder='Nombre...')#txtNombre
+                div(class='small-12 medium-6 columns')
+                    label Marca:
+                        input(type='text' placeholder='Marca...')#txtMarca
+                
+                div(class='small-12 columns')
+                    label Descripcion:
+                        textarea(placeholder='Descripcion...')#txaDescripcion
+                
+                div(class='small-12 medium-4 columns')
+                    label Dias trabajados:
+                        input(type='text' placeholder='Dias trabajados...' required pattern='integer')#txtDiasTrabajo
+                        small.error Los dias trabajados son requeridos y tienen que ser un valor numerico
+                div(class='small-12 medium-4 columns')
+                    label Precio por dia:
+                        input(type='text' placeholder='Precio por dia...' required pattern='integer')#txtPrecioDia
+                        small.error El percio por dia es requerido y tiene que ser un valor numerico
+                div(class='small-12 medium-4 columns')
+                    label Inventario:
+                        input(type='text' placeholder='Cantidad existente...' required pattern='integer')#txtCantidad
+                        small.error La cantidad es requerida y tiene que ser un valor numerico
                 
                 div(class='small-12 columns')
                     button(type='button' class='btn tiny success')#btnGuardar
@@ -184,8 +242,116 @@ html
                     button(type='button' class='btn tiny alert')#btnCancelar
                         i(class='fa fa-ban')
                         |  Cancelar
-        section(class='reveal-modal1' data-reveal1)#pnlContrato
-            div contrato
+
+        section(class='reveal-modal' data-reveal)#pnlEquipoConsulta
+            table(class='row special')#gvEquipos
+                thead
+                    tr
+                        td &nbsp
+                        td NE
+                        td Nombre
+                        td Marca                        
+                        td Familia
+                tbody &nbsp
+        section(class='reveal-modal' data-reveal)#pnlClienteConsulta
+            table(class='row special')#gvClientes
+                thead
+                    tr
+                        td &nbsp
+                        td Nombre
+                        td RFC
+                        td Telefono                        
+                        td Municipio
+                tbody &nbsp
+                
+        section(class='reveal-modal1' data-reveal1)#pnlClienteConsulta
+            div
+                img(src='img/logo.png') {{logotipo}}
+                article
+                    label FOLIO
+                    span {{folio}}
+                    label FECHA
+                    span {{fecha}} {{hora}}
+                    
+                p
+                    h4 
+                        strong NEUMATIC'S TOOLS
+                    h5
+                        strong VENTA, RENTA Y REPARACI'O DE EQUIPO NEUMÁTICO PARA LA INDUSTRIA MINERA Y DE LA CONSTRUCCI'ON
+                    h6
+                        SANDRA VERONICA ESPARZA PEREZ
+                    small CALLE CORONA DEL ROSAL #805
+                    small COL. STANTA FE C.P. 34240
+                    small VICTORIA DE DURANGO, DURANGO TEL. Y FAX: 818-52-46.
+                    small R.F.C EAPS730209F25
+                    
+                | &nbsp
+                | &nbsp =============================================================================================================
+                | &nbsp
+                
+                p 
+                    | Contrato de presentación de servicios de renta de __{{equipo}} {{descripcion}} {{sku}}__ Que celebran por
+                    | una parte el prestador de servicios SANDRA VERONICA ESPARZA PEREZ y por la otra, el usuario denominado CLIENTE.
+                strong CLAUSULAS
+                
+                label 1.-El prestador de servicios se compromete a entregar en perfectas condiciones de trabajo el equipo.
+                label 2.-El cliente tiene la obligación de verificar el buen estado en que se recibe el equipo y entregarlo de igual forma.
+                label 3.-Las piezas faltantes se cobraran en efectivo, no siendo sustituidas por otras, pues es indispensable para la uniformidad y el buen estado del equipo.
+                label 4.-En la renda del equipo NO HAY CREDITO, por lo que al devolver el equipo se deberá liquidar la renta.
+                label 5.-El cliente esta obligado a dejar un depósito por la cantidad de $ __{{cantidad}}__ en DOCUMENTOS que garantiza la devolución del equipo en buen estado.
+                label 6.-El prestador de servicios se compromete a no hacer uso de este depósito, salvo si el cliente llegara a hacer mal uso del equipo, se niegue a regresar el equipo, 
+                    | o se niegue a pagar la renta del mismo.
+                label 7.-En caso de que el equipo se rente en periodos mayores a 30 días, se cobrara cada 15 días.
+                label 8.-Se cobrara el día de salida y el día de entrada PRECIOS DE $ __{{precioDia}}__ POR DÍA MÁS IVA
+                
+                p
+                    strong DATOS DEL CLIENTE
+                    strong DATOS DE LA OBRA
+                
+                div.row
+                    div(class='small-6 columns')
+                        label NOMBRE:
+                            input(type='text')
+                    div(class='small-6 columns')
+                        label RAZÓN SOCIAL:
+                            input(type='text')
+                | NOMBRE: __{{nombre completo F4}}__            RAZÓN SOCIAL: __{{nombre de la empersa}}__
+                | DIRECCIÓN: __{{DIRECCION}}__                  DOMICILIO: __{{domicilio}}__
+                | CIUDAD: __{{ciudad}}__                        CIUDAD: __{{ciudad}}__
+                | TELÉFONO: __{{telefono}}__                    TELÉFONO: __{{TELEFONO}}__
+                | IDENTIFICACION: __{{numero de identificacion}}__
+                | EQUIPO RENTADO: __{{equipo rentado F4}}__
+                | &nbsp
+                | &nbsp =============================================================================================================
+                | &nbsp
+                | Durango, Dgo., a __{{dia}}__ de __{{mes}}__ del __{{año}}__
+                | Debo (emos) y pagare (emos) incondicionalmente a la orden de la SRA. SANDRA VERONICA ESPARZA PEREZ, en Durango, Dgo., el día __{{dia}} de {{mes}} del {{año}}__
+                | la cantidad de __{{cantidad en letras}} 00/100 M.N.__
+                | Valor recibido a mi (nuestra) entera satisfacción, en caso de demora prometo(emos) además pagar intereses a razón de __{{interes}}__% mensual
+                | durante todo el tiempo en que este pagare permanezca total o parcialmente insoluto sin que por ello se considere prorrogado el plazo fijado.
+                | &nbsp
+                | NOMBRE: __{{nombre completo COPIA DE ARRIBA}}__                                           _________________________
+                | DIRECCIÓN: __{{DIRECCION}}__                                                                       ACEPTAMOS
+                | COLONIA: __{{colinia}}__
+                | CIUDAD: __{{ciudad}}__
+                | TELÉFONO: __{{telefono}}__
+                
+    div(class='reveal-modal medium' data-reveal)#popMessage
+        section.modal-header
+            h3.modal-title
+            a.close-reveal-modal &#215;
+        section(class='modal-body text-left')
+        br
+        section(class='modal-footer text-right')
+            div.row
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny success custom-button')#btnAceptar
+                        i(class='fa fa-check') &nbsp
+                        span.show-for-medium-up Aceptar
+                div(class='small-6 columns')
+                    button(type='button' class='button expand tiny alert custom-button')#btnCancelar
+                        i(class='fa fa-ban') &nbsp
+                        span.show-for-medium-up Cancelar
         
         
         

@@ -63,31 +63,6 @@ app.post('/', function(req, res) {
 app.get('/main', /*ensureAuthenticated,*/ function (req, res){
     res.render('bsMenu', {title:'Control de visitas', usuario:'tempo'});//, usuario:req.user.Usuario});
 });
-app.get('/jData', /*ensureAuthenticated,*/ function (req, res){
-    console.log('jData');
-    //res.writeHead(200, { 'Content-Type': 'application/json'});
-    
-    console.log(req.query.query);
-    var query = req.query.query,
-        json = {
-            $or: [ 
-                    {'nombre.nombre': {$regex:'.*'+query+'.*'}}, 
-                    {'nombre.apaterno': {$regex:'.*'+query+'.*'}}, 
-                    {'nombre.amaterno': {$regex:'.*'+query+'.*'}}
-            ]
-        };
-    mongo.personas.find(json, {nombre:1}, function(err, documents) {
-        console.log('----------------------------fetch persona mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(documents);
-            res.json(documents);
-        }
-    });
-});
 
 app.get('/GetFamilias', function(req, res) {
     
@@ -105,12 +80,12 @@ app.get('/GetFamilias', function(req, res) {
     
 });
 
-app.get('/GetPersonas/All', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch personas');
+app.get('/GetEquipos', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch equipos');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
     
-    mongo.personas.find({}).populate('invitado', {'nombre':1}).exec(function (err, documents) {
-        console.log('----------------------------fetch persona mongo----------------------------------');
+    mongo.equipos.find({ activo:true }).populate('idFamilia', {nombre:1}).exec(function (err, documents) {
+        console.log('----------------------------fetch equipos mongo----------------------------------');
         if(err) {
             console.log('Error:'+err);
             res.send('Error:'+err, 410);
@@ -121,15 +96,16 @@ app.get('/GetPersonas/All', /*ensureAuthenticated,*/ function (req, res){
         }
     });
 });
-app.post('/SavePersona', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('save persona');
+app.post('/SaveEquipo', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('save equipo');
     console.log(req.body);
     
-    if(req.body.invitado)
-        req.body.invitado = req.body.invitado._id;    
-    var persona = new mongo.personas(req.body);
-    persona.save(function (err, document){
-        console.log('----------------------------save persona mongo----------------------------------');
+    if(req.body.idFamilia)
+        req.body.idFamilia = req.body.idFamilia._id;
+    
+    var equipo = new mongo.equipos(req.body);
+    equipo.save(function (err, document){
+        console.log('----------------------------save equipo mongo----------------------------------');
         
         if(err) {
             console.log('Error:'+err);
@@ -141,20 +117,19 @@ app.post('/SavePersona', /*ensureAuthenticated,*/ function(req, res) {
         }
     });
 });
-app.put('/SavePersona/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update persona');
+app.put('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('update equipo');
     console.log(req.body);
     
     var id = req.body._id.toString();    
     json = req.body;
     delete json._id;
     
-    if(json.invitado)
-        json.invitado = json.invitado._id; 
+    json.idFamilia = json.idFamilia._id; 
     
     console.log(id);
-    mongo.personas.update({_id:id}, json, {multi:false}, function(err) {
-        console.log('----------------------------update persona mongo----------------------------------');
+    mongo.equipos.update({_id:id}, json, {multi:false}, function(err) {
+        console.log('----------------------------update equipo mongo----------------------------------');
         if(err) {
             console.log('Error:'+err);
             res.send('Error:'+err, 410);
@@ -163,12 +138,81 @@ app.put('/SavePersona/:id', /*ensureAuthenticated,*/ function(req, res) {
             res.send();
     });
 });
-app.delete('/SavePersona/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('delete persona');
+app.delete('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('delete equipo');
     console.log(req.params.id);
     
-    mongo.personas.findByIdAndRemove(req.params.id, function(err, document) {
-        console.log('----------------------------delete persona mongo----------------------------------');
+    mongo.equipos.findByIdAndRemove(req.params.id, function(err, document) {
+        console.log('----------------------------delete equipo mongo----------------------------------');
+        console.log(document);
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else
+            res.json({ok:1});
+    });
+});
+
+app.get('/GetClientes', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch clientes');
+    //res.writeHead(200, { 'Content-Type': 'application/json'});
+    
+    mongo.clientes.find({ activo:true }, function (err, documents) {
+        console.log('----------------------------fetch clientes mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(documents);
+            res.json(documents);
+        }
+    });
+});
+app.post('/SaveCliente', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('save cliente');
+    console.log(req.body);
+        
+    var cliente = new mongo.clientes(req.body);
+    cliente.save(function (err, document){
+        console.log('----------------------------save cliente mongo----------------------------------');
+        
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(document);
+            res.json({_id:document._id});
+        }
+    });
+});
+app.put('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('update eqclienteuipo');
+    console.log(req.body);
+    
+    var id = req.body._id.toString();    
+    json = req.body;
+    delete json._id;
+    
+    console.log(id);
+    mongo.clientes.update({_id:id}, json, {multi:false}, function(err) {
+        console.log('----------------------------update cliente mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else
+            res.send();
+    });
+});
+app.delete('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('delete cliente');
+    console.log(req.params.id);
+    
+    mongo.clientes.findByIdAndRemove(req.params.id, function(err, document) {
+        console.log('----------------------------delete cliente mongo----------------------------------');
         console.log(document);
         if(err) {
             console.log('Error:'+err);
@@ -202,7 +246,8 @@ db.once('open', function callback(){
                             },
             rfc             : String,
             telefono        : String,
-            identificacion  : String
+            identificacion  : String,
+            activo          : Boolean
 		}, {versionKey: false}),
         ScEquipos = mongoose.Schema({
             sku             : String,

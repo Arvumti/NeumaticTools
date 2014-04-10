@@ -18,21 +18,25 @@ var app = {},
 
 /* ----------------------------------------- 1.-Modelos ----------------------------------------- */
 app.MoCliente = Backbone.Model.extend({
+    idAttribute: '_id',
     url: function() {
         var ruta = 'SaveCliente' + (this.id ? '/' + this.id : '');
         return ruta;
     },
     defaults: {
-        visible: 1
+        visible: 1,
+        activo: 1
     }
 });
 app.MoEquipo = Backbone.Model.extend({
+    idAttribute: '_id',
     url: function() {
         var ruta = 'SaveEquipo' + (this.id ? '/' + this.id : '');
         return ruta;
     },
     defaults: {
-        visible: 1
+        visible: 1,
+        activo: 1
     }
 });
 /* ----------------------------------------- 2.-Colecciones ----------------------------------------- */
@@ -51,13 +55,16 @@ app.CoEquipos = new window.CoEquiposList();
 app.vwMain = Backbone.View.extend({
     el: 'body',
     events: {
-        'click .secciones a': 'navigate'
+        'click nav section > ul > li': 'navigate'
     },
     initialize: function() {
+        this.nav =this.$el.children('header').children('nav');
         this.main = this.$el.children('main');
     },
     /* ---------------------------------------- eventos ---------------------------------------- */
     navigate: function(e) {
+        app.vi.Main.nav.find('section > ul > li').removeClass('active');
+        $(e.currentTarget).addClass('active');
         //e.preventDefault();
         //e.stopPropagation();
         
@@ -67,11 +74,17 @@ app.vwMain = Backbone.View.extend({
 
 app.ViCliente = Backbone.View.extend({
     el: '#pnlCliente',
-    events: {},
-    initialize: function() {        
+    events: {
+        'click #btnCancelar'    : 'click_btnCancelar',
+        'click #btnGuardar'     : 'click_btnGuardar',
+        'click #btnLimpiar'     : 'click_btnLimpiar'
+    },
+    initialize: function() {
+        var that = this;
         this.crud = 1;
         this.form = this.$el.children('form');
         
+        this.hTitulo = this.$el.find('h3');
         this.txtNombre = this.form.find('#txtNombre');
         this.txtAPaterno = this.form.find('#txtAPaterno');
         this.txtAMaterno = this.form.find('#txtAMaterno');
@@ -82,6 +95,13 @@ app.ViCliente = Backbone.View.extend({
         this.txtRFC = this.form.find('#txtRFC');
         this.txtTelefono = this.form.find('#txtTelefono');
         this.txtIdentificacion = this.form.find('#txtIdentificacion');
+        
+        this.form.on('valid', function (e) {
+			e.preventDefault();
+			that.save();
+		}).on('submit', function (e) {
+			e.preventDefault();
+		});
     },
     clear: function() {
         app.vi.Cliente.form[0].reset();
@@ -94,32 +114,16 @@ app.ViCliente = Backbone.View.extend({
     render: function() {
         this.clear();
         this.crud = 1;
+        this.hTitulo.text('Nuevo Cliente');
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
+        this.txtNombre.focus();
     },
-    show: function(model) {
-        this.clear();
-        this.crud = 2;
-        this.fakeModel = model;
-        this.setData(model.toJSON());
-        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
-    },
-    /* ---------------------------------------- eventos ---------------------------------------- */
-    click_btnCancelar: function() {
-        switch(this.crud) {
-            case 1:
-                Backbone.history.navigate('/', {trigger:true});
-                break;
-            default:
-                this.hide();
-                break;
-        }
-    },
-    click_btnGuardar: function(json) {
+    save: function() {
         var json = this.getData();
         
         switch(this.crud) {
             case 1:
-                app.CoOficios.create(json, {error:error, wait:true});
+                app.CoClientes.create(json, {error:error, wait:true});
                 this.clear();
                 break;
             case 2:
@@ -134,6 +138,28 @@ app.ViCliente = Backbone.View.extend({
             
             alert(xrh.status + ' - ' + xrh.statusText + ' : ' + xrh.responseText);
         }
+    },
+    show: function(jData) {
+        this.clear();
+        this.crud = 2;
+        this.fakeModel = jData.model;
+        this.hTitulo.text(jData.title);
+        this.setData(this.fakeModel.toJSON());
+        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    click_btnCancelar: function() {
+        switch(this.crud) {
+            case 1:
+                Backbone.history.navigate('/', {trigger:true});
+                break;
+            default:
+                this.hide();
+                break;
+        }
+    },
+    click_btnGuardar: function() {
+        this.form.submit();
     },
     click_btnLimpiar: function() {
         this.clear();
@@ -170,15 +196,83 @@ app.ViCliente = Backbone.View.extend({
         this.txtIdentificacion.val(json.identificacion);
     }
 });
-app.ViEquipo = Backbone.View.extend({
-    el: '#pnlEquipo',
+app.ViClientes = Backbone.View.extend({
+    el: '#pnlClienteConsulta',
     events: {},
     initialize: function() {
-        var that = this;
+        this.gvClientes = this.$el.find('table#gvClientes');        
+        this.listenTo(app.CoClientes, 'add', this.addTR);
+    },
+    /*-------------------------- Base --------------------------*/
+    render: function(){
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
+    },
+    addTR: function(model) {        
+        var per = new app.ViClienteTR({model:model}).render();        
+        this.gvClientes.children('tbody').prepend(per.$el);
+    }
+});
+app.ViClienteTR = Backbone.View.extend({
+    tagName: 'tr',
+    events: {
+        'click i.fa-repeat'  : 'click_isEdit',
+        'click i.fa-trash-o' : 'click_isDelete'
+    },
+    initialize: function() {        
+        this.listenTo(this.model, 'change', this.change_model);
+        this.listenTo(this.model, 'destroy', this.remove);
+    },
+    change_model: function() {
+        this.$el.html(app.templates.tr_cliente(this.model.toJSON()));
+    },
+    click_isEdit: function() {
+        app.vi.Cliente.show({title:'Modificar Cliente', model:this.model});
+    },    
+    click_isDelete: function() {
+        app.ut.confirm({header:'Eliminar Equipo', body: '¿Desea eliminar el cliente?', fnA: removeTR});
         
+        var model = this.model;        
+        function removeTR() {
+            model.destroy({ wait:true, success:done, error:error});
+        
+            function done(model, response) {
+                console.log('ok');
+                console.log(model);
+                console.log(response);
+            }
+            function error(model, response, b) {
+                console.log('error');
+                console.log(model);
+                console.log(response);
+                console.log(b);
+            }
+        }
+    },
+    /*-------------------------- Base --------------------------*/
+    render: function(){
+        var jData = this.model.toJSON();
+        //this.$el.attr('id', this.model.cid);
+        
+        this.$el.html(app.templates.tr_cliente(jData));
+        this.model.view = this;
+        
+        return this;
+    }
+});
+
+app.ViEquipo = Backbone.View.extend({
+    el: '#pnlEquipo',
+    events: {
+        'click #btnCancelar'    : 'click_btnCancelar',
+        'click #btnGuardar'     : 'click_btnGuardar',
+        'click #btnLimpiar'     : 'click_btnLimpiar'
+    },
+    initialize: function() {
+        var that = this;        
         this.crud = 1;
         this.form = this.$el.children('form');
         
+        this.hTitulo = this.$el.find('h3');
         this.txtNE = this.form.find('#txtNE');
         this.tyaFamilias = this.form.find('#tyaFamilias');
         this.txtNombre = this.form.find('#txtNombre');
@@ -194,6 +288,13 @@ app.ViEquipo = Backbone.View.extend({
             app.cbos.familias = data;                            
             app.ut.tyAhead(that.tyaFamilias, '/GetFamilias');
         }
+        
+        this.form.on('valid', function (e) {
+			e.preventDefault();
+			that.save();
+		}).on('submit', function (e) {
+			e.preventDefault();
+		});
     },
     clear: function() {
         app.vi.Equipo.form[0].reset();
@@ -206,32 +307,17 @@ app.ViEquipo = Backbone.View.extend({
     render: function() {
         this.clear();
         this.crud = 1;
+        this.hTitulo.text('Nuevo Equipo');
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
+        
+        this.tyaFamilias.focus();
     },
-    show: function(model) {
-        this.clear();
-        this.crud = 2;
-        this.fakeModel = model;
-        this.setData(model.toJSON());
-        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
-    },
-    /* ---------------------------------------- eventos ---------------------------------------- */
-    click_btnCancelar: function() {
-        switch(this.crud) {
-            case 1:
-                Backbone.history.navigate('/', {trigger:true});
-                break;
-            default:
-                this.hide();
-                break;
-        }
-    },
-    click_btnGuardar: function(json) {
+    save: function() {
         var json = this.getData();
         
         switch(this.crud) {
             case 1:
-                app.CoOficios.create(json, {error:error, wait:true});
+                app.CoEquipos.create(json, {error:error, wait:true});
                 this.clear();
                 break;
             case 2:
@@ -247,13 +333,35 @@ app.ViEquipo = Backbone.View.extend({
             alert(xrh.status + ' - ' + xrh.statusText + ' : ' + xrh.responseText);
         }
     },
+    show: function(jData) {
+        this.clear();
+        this.crud = 2;
+        this.fakeModel = jData.model;
+        this.hTitulo.text(jData.title);
+        this.setData(this.fakeModel.toJSON());
+        this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    click_btnCancelar: function() {
+        switch(this.crud) {
+            case 1:
+                Backbone.history.navigate('/', {trigger:true});
+                break;
+            default:
+                this.hide();
+                break;
+        }
+    },
+    click_btnGuardar: function() {
+        this.form.submit();
+    },
     click_btnLimpiar: function() {
         this.clear();
     },
     getData: function() {
         var json = {
             sku             : this.txtNE.val(),
-            idFamilia       : this.tyaFamilias.val(),
+            idFamilia       : this.tyaFamilias.data('current'),
             nombre          : this.txtNombre.val(),
             marca           : this.txtMarca.val(),
             descripcion     : this.txaDescripcion.val(),
@@ -261,36 +369,119 @@ app.ViEquipo = Backbone.View.extend({
             precioDia       : this.txtPrecioDia.val(),
             cantidad        : this.txtCantidad.val()
         };
+        
         return json;
     },
-    setData: function(json) {        
+    setData: function(json) {
+        json.idFamilia.nombreC = json.idFamilia.nombre;
+        
         this.txtNE.val(json.sku);
-        this.tyaFamilias.val(json.idFamilia);
+        this.tyaFamilias.data('current', json.idFamilia).val(json.idFamilia.nombreC);
         this.txtNombre.val(json.nombre);
         this.txtMarca.val(json.marca);
         this.txaDescripcion.val(json.descripcion);
         this.txtDiasTrabajo.val(json.diasTrabajados);
         this.txtPrecioDia.val(json.precioDia);
-        this.txtCantidad.val(json.direccion.cantidad);
+        this.txtCantidad.val(json.cantidad);
+    }
+});
+app.ViEquipos = Backbone.View.extend({
+    el: '#pnlEquipoConsulta',
+    events: {},
+    initialize: function() {
+        this.gvEquipos = this.$el.find('table#gvEquipos');        
+        this.listenTo(app.CoEquipos, 'add', this.addTR);
+    },
+    /*-------------------------- Base --------------------------*/
+    render: function(){
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
+    },
+    addTR: function(model) {        
+        var per = new app.ViEquipoTR({model:model}).render();        
+        this.gvEquipos.children('tbody').prepend(per.$el);
+    }
+});
+app.ViEquipoTR = Backbone.View.extend({
+    tagName: 'tr',
+    events: {
+        'click i.fa-repeat'  : 'click_isEdit',
+        'click i.fa-trash-o' : 'click_isDelete'
+    },
+    initialize: function() {        
+        this.listenTo(this.model, 'change', this.change_model);
+        this.listenTo(this.model, 'destroy', this.remove);
+    },
+    change_model: function() {
+        this.$el.html(app.templates.tr_equipo(this.model.toJSON()));
+    },
+    click_isEdit: function() {
+        app.vi.Equipo.show({title:'Modificar Equipo', model:this.model});
+    },    
+    click_isDelete: function() {
+        app.ut.confirm({header:'Eliminar Equipo', body: '¿Desea eliminar el equipo?', fnA: removeTR});
+        
+        var model = this.model;        
+        function removeTR() {
+            model.destroy({ wait:true, success:done, error:error});
+        
+            function done(model, response) {
+                console.log('ok');
+                console.log(model);
+                console.log(response);
+            }
+            function error(model, response, b) {
+                console.log('error');
+                console.log(model);
+                console.log(response);
+                console.log(b);
+            }
+        }
+    },
+    /*-------------------------- Base --------------------------*/
+    render: function(){
+        var jData = this.model.toJSON();
+        //this.$el.attr('id', this.model.cid);
+        
+        this.$el.html(app.templates.tr_equipo(jData));
+        this.model.view = this;
+        
+        return this;
     }
 });
 /* ----------------------------------------- 4.-Rutas ----------------------------------------- */
 app.router = Backbone.Router.extend({
     routes: {
-        ''          : 'index',        
-        'cliente'   : 'cliente',
-        'equipo'    : 'equipo'
+        ''                  : 'index',        
+        'cliente/:estado'   : 'cliente',
+        'equipo/:estado'    : 'equipo',
     },
     index: function() {
-        $('.active-view').addClass('isHidden').hide()
-    },
-    cliente: function() {
+        app.vi.Main.nav.find('section > ul > li').removeClass('active');
         $('.active-view').addClass('isHidden').hide();
-        app.vi.Cliente.render()
     },
-    equipo: function() {
+    cliente: function(estado) {
+        app.vi.Main.nav.find('a[href^="#cliente"]').parents('li').addClass('active');
         $('.active-view').addClass('isHidden').hide();
-        app.vi.Equipo.render();
+        switch(estado) {        
+            case 'alta':
+                app.vi.Cliente.render();
+                break;
+            case 'consulta':
+                app.vi.Clientes.render();
+                break;
+        }
+    },
+    equipo: function(estado) {
+        app.vi.Main.nav.find('a[href^="#equipo"]').parents('li').addClass('active');
+        $('.active-view').addClass('isHidden').hide();
+        switch(estado) {        
+            case 'alta':
+                app.vi.Equipo.render();
+                break;
+            case 'consulta':
+                app.vi.Equipos.render();
+                break;
+        }
     }
 });
 /* ----------------------------------------- 5.-Load ----------------------------------------- */
@@ -314,7 +505,9 @@ function inicio(){
     app.vi = {
         Main: new app.vwMain(),
         Cliente: new app.ViCliente(),
-        Equipo: new app.ViEquipo()
+        Clientes: new app.ViClientes(),
+        Equipo: new app.ViEquipo(),
+        Equipos: new app.ViEquipos()
 	};
     
 	/*app.keytrap = new keytrap();
@@ -326,6 +519,8 @@ function inicio(){
 	app.socket.on(app.ns.cvSave, saveVenta);
 	app.socket.on(app.ns.GetArticulo, addArticulo);*/
     
+    app.CoEquipos.fetch();
+    app.CoClientes.fetch();
     Backbone.history.start({
         root: '/'
     });
@@ -772,12 +967,16 @@ function templates(){
     
 	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
         cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
-        cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html())
+        cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html()),
+        tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
+        tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html())
         ;
 
 	return {
         alertas: alertas,
-        cbo: cbo
+        cbo: cbo,
+        tr_cliente: tr_cliente,
+        tr_equipo: tr_equipo
 	}
 }
 /* ----------------------------------------- 8.-Templates ----------------------------------------- */

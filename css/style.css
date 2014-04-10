@@ -17,6 +17,26 @@
 /*------------------------- 1.-Principal --------------------*/
 /*------------------------- 20.-Global --------------------*/
 /*------------------------- 21.-Custom --------------------*/
+button.alert {
+  background-color: #bf1c2d;
+}
+.fa {
+  cursor: pointer;
+}
+.row.special {
+  max-width: 90%;
+}
+small.error {
+  background-color: #bf1c2d !important;
+}
+table td.icons {
+  padding: 0 !important;
+  text-align: center;
+  width: 50px;
+}
+.tt-dropdown-menu {
+  margin-top: -10px;
+}
 .twitter-typeahead {
   display: block;
   width: 100%;
