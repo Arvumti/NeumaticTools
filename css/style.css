@@ -15,8 +15,90 @@
 /*------------------------- 0.2.-Variables --------------------*/
 /*------------------------- 0.3.-Funciones --------------------*/
 /*------------------------- 1.-Principal --------------------*/
+body,
+html {
+  font-size: 16px;
+  height: 100%;
+  width: 100%;
+}
+.rp-contrato {
+  border: 1px solid #333;
+  height: 1495px;
+  margin: 0 auto;
+  padding: 1em;
+  width: 1170px;
+}
+.rp-contrato .header {
+  border-bottom: 5px double #333;
+  padding-bottom: 0.5em;
+  position: relative;
+}
+.rp-contrato .header figure {
+  float: left;
+  height: 11em;
+  margin: 0;
+  width: 11em;
+}
+.rp-contrato .header figure img {
+  height: 100%;
+  width: 100%;
+}
+.rp-contrato .header .info {
+  margin-left: 13em;
+  width: 45em;
+}
+.rp-contrato .header .info small {
+  display: block;
+}
+.rp-contrato .header .folio {
+  border: 1px solid #333;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 11em;
+}
+.rp-contrato .header .folio label {
+  background-color: #333;
+  color: #eee;
+  display: block;
+  padding: 0.2em;
+}
+.rp-contrato .header .folio span {
+  display: block;
+  padding: 0.2em;
+  text-align: right;
+}
+.rp-contrato .body {
+  margin: 0.5em 0 1.5em 0;
+  text-align: justify;
+}
+.rp-contrato .pagare {
+  border-top: 5px double #333;
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  text-align: justify;
+}
 /*------------------------- 20.-Global --------------------*/
+.table-custom {
+  width: 100%;
+}
+.table-custom .table-row-full {
+  width: 100%;
+}
+.table-custom .table-row-half {
+  display: inline-block;
+  vertical-align: top;
+  width: 50%;
+}
 /*------------------------- 21.-Custom --------------------*/
+.borderedHR {
+  border: 1px solid #00f;
+}
+.borderedSP,
+.borderedSP * {
+  border: 1px solid #00f;
+}
 button.alert {
   background-color: #bf1c2d;
 }
@@ -42,3 +124,28 @@ table td.icons {
   width: 100%;
 }
 /*------------------------- 22.-MediaQueries --------------------*/
+@media print {
+  body,
+  html {
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+  }
+  header,
+  form {
+    display: none;
+  }
+  .rp-contrato {
+    border: none;
+    height: 1495px;
+    margin: 0;
+    padding: 0;
+    width: 1170px;
+  }
+  .rp-contrato .header .folio label {
+    background-color: #333 !important;
+    color: #eee !important;
+    display: block;
+    padding: 0.2em;
+  }
+}

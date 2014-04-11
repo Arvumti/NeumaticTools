@@ -260,6 +260,80 @@ app.ViClienteTR = Backbone.View.extend({
     }
 });
 
+app.ViContrato = Backbone.View.extend({
+    el: '#pnlContrato',
+    events: {
+        'keyup #tyaCliente' : 'keyup_tyaCliente'
+    },
+    initialize: function() {
+        var that = this;        
+        this.form = this.$el.children('form');
+        
+        this.tyaCliente = this.form.find('#tyaCliente');
+        this.tyaEquipo = this.form.find('#tyaEquipo');
+        this.txaAccesorios = this.form.find('#txaAccesorios');
+        
+        this.busqueda = app.ut.tyAhead({elem:this.tyaCliente, url:'/GetClientesBySearch', done:done});
+        
+        this.equipos = [];
+        /*
+        [
+            {
+                nombre: '',
+                descripcion: '',
+                sku :'',
+                accesorios: []
+            }
+        ]
+        */
+        
+        function done(data, process) {
+            var newData = [];
+            for(var i = 0; i < data.length; i++) {
+                newData.push({
+                    _id: data[i]._id,
+                    nombre: data[i].nombre,//data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno,
+                    dKey: data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno
+                });
+            }
+            process(newData);
+        }
+    },
+    render: function() {
+        this.$el.find('.rp-contrato').html(app.templates.rp_contratos({}));
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    getData: function() {
+        var json = {
+            folio: '',
+            fecha: '',
+            hora: '',
+            deposito: '',
+            precioDia: '',
+            telefono: '',
+            identificacion: '',
+            interes: '',
+            equipos: this.equipos,
+            nombre: {
+                nombre: '',
+                apaterno: '',
+                amaterno: ''
+            },
+            direccion: {
+                calle: '',
+                municipio: '',
+                colonia: '',
+                numero: ''
+            }
+        };
+    },
+    keyup_tyaCliente: function(e) {
+        if(e.keyCode == 13 && e.currentTarget.value.length > 0)
+            this.busqueda.execQuery();
+    }
+});
+
 app.ViEquipo = Backbone.View.extend({
     el: '#pnlEquipo',
     events: {
@@ -285,8 +359,15 @@ app.ViEquipo = Backbone.View.extend({
         app.ut.getJson({url:'GetFamilias', done:done});
         
         function done(data) {
-            app.cbos.familias = data;                            
-            app.ut.tyAhead(that.tyaFamilias, '/GetFamilias');
+            app.cbos.familias = data;
+            
+            var arr = [];
+            for(var i = 0; i < app.cbos.familias.length; i++) {
+                var familia = app.cbos.familias[i];
+                arr.push({_id:familia._id, nombre:familia.nombre, dKey:familia.nombre});
+            }
+            
+            app.ut.tyAhead({elem:that.tyaFamilias, arr:arr});
         }
         
         this.form.on('valid', function (e) {
@@ -298,6 +379,7 @@ app.ViEquipo = Backbone.View.extend({
     },
     clear: function() {
         app.vi.Equipo.form[0].reset();
+        app.vi.Equipo.tyaFamilias.removeData('current');
     },
     hide: function() {
         this.fakeModel = null;
@@ -373,10 +455,10 @@ app.ViEquipo = Backbone.View.extend({
         return json;
     },
     setData: function(json) {
-        json.idFamilia.nombreC = json.idFamilia.nombre;
+        json.idFamilia.dKey = json.idFamilia.nombre;
         
         this.txtNE.val(json.sku);
-        this.tyaFamilias.data('current', json.idFamilia).val(json.idFamilia.nombreC);
+        this.tyaFamilias.data('current', json.idFamilia).val(json.idFamilia.dKey);
         this.txtNombre.val(json.nombre);
         this.txtMarca.val(json.marca);
         this.txaDescripcion.val(json.descripcion);
@@ -453,6 +535,7 @@ app.router = Backbone.Router.extend({
     routes: {
         ''                  : 'index',        
         'cliente/:estado'   : 'cliente',
+        'contrato/:estado'  : 'contrato',
         'equipo/:estado'    : 'equipo',
     },
     index: function() {
@@ -468,6 +551,18 @@ app.router = Backbone.Router.extend({
                 break;
             case 'consulta':
                 app.vi.Clientes.render();
+                break;
+        }
+    },
+    contrato: function(estado) {
+        app.vi.Main.nav.find('a[href^="#contrato"]').parents('li').addClass('active');
+        $('.active-view').addClass('isHidden').hide();
+        switch(estado) {
+            case 'alta':
+                app.vi.Contrato.render();
+                break;
+            case 'consulta':
+                
                 break;
         }
     },
@@ -506,6 +601,7 @@ function inicio(){
         Main: new app.vwMain(),
         Cliente: new app.ViCliente(),
         Clientes: new app.ViClientes(),
+        Contrato: new app.ViContrato(),
         Equipo: new app.ViEquipo(),
         Equipos: new app.ViEquipos()
 	};
@@ -524,6 +620,8 @@ function inicio(){
     Backbone.history.start({
         root: '/'
     });
+    
+    //window.print();
 }
 
 /* ----------------------------------------- 6.-Funciones Sockets ----------------------------------------- */
@@ -898,43 +996,30 @@ function utilerias() {
 		__loading.css({height:max + 'px'}).fadeIn().children('#topLoader').css({top:top + 'px'});
 	}
         
-    function Typeahead(elem, dir) {
-        var arr = [];
-        for(var i = 0; i < app.cbos.familias.length; i++) {
-            var familia = app.cbos.familias[i];
-            arr.push({_id:familia._id, nombre:familia.nombre, nombreC:familia.nombre});
-        }
-        
-        var nombres = new Bloodhound({
-          datumTokenizer: function(datum) {
-              return Bloodhound.tokenizers.whitespace(datum.nombreC); 
-          },
-          queryTokenizer: Bloodhound.tokenizers.whitespace,
-          local: arr
-        });
-        
-        nombres.initialize();
+    function Typeahead(json) {
+        var arr = json.arr || [],
+            elem = json.elem,
+            url = json.url || '',
+            displayKey = json.dKey || 'dKey',
+            template = json.tmp || app.templates.tyaTmp,
+            fail = json.fail || __Fake,
+            done = json.done || __Fake,
+            _callSearch = null,
+            _query = null,
+            _process = null,
+            _timeout = 1000,
+            _metodo = url.length > 0 ? searchQuery : prepareCollection();
         
         elem.typeahead(null, {
             name: 'familias',
-            displayKey: 'nombreC',
-            source: nombres.ttAdapter()/*function(query, process) {
-                console.log(query)
-                $.getJSON(dir, {query:query}).done(done).fail(fail);
-                
-                function done(data) {
-                    process(data);
-                }
-                function fail(data) {
-                    process({nombre:'no hay ningun dato capturado'});
-                }
-            }*/,
+            displayKey: displayKey,
+            source: _metodo,
             templates: {
-                suggestion: Handlebars.compile('{{nombreC}}')
+                suggestion: template
             }
         })
         .on('typeahead:selected typeahead:autocompleted', function(e, datum) {
-            $(e.currentTarget).data('current', datum).val(datum.nombreC);
+            $(e.currentTarget).data('current', datum).val(datum.dKey);
             console.log(datum)
         })
         .on('blur', function(e) {
@@ -942,10 +1027,67 @@ function utilerias() {
             if(elem.data('current')) {
                 if(elem.data('current').nombre != elem.val()) {
                     var datum = elem.data('current');
-                    elem.val(datum.nombreC);
+                    elem.val(datum.dKey);
                 }
             }
         });
+        
+        
+        
+        function execQuery() {
+            if(_callSearch)
+                clearTimeout(_callSearch);
+            
+            fSeacrh();
+        }
+        
+        function fSeacrh() {
+            $.getJSON(url, {query:_query}).done(wrapDone).fail(wrapFail).always(always);
+            
+            function always() {
+                _query = null;
+                _callSearch = null;
+            }
+            function wrapFail(xhr, err) {
+                fail(xhr, err);
+            }
+            function wrapDone(data) {
+                done(data, _process);
+            }
+        }
+        
+        function prepareCollection() {
+            var nombres = new Bloodhound({
+              datumTokenizer: function(datum) {
+                  return Bloodhound.tokenizers.whitespace(datum.dKey); 
+              },
+              queryTokenizer: Bloodhound.tokenizers.whitespace,
+              local: arr
+            });
+            
+            nombres.initialize();
+            
+            return nombres.ttAdapter();
+        }
+        
+        function searchQuery(query, process) {
+            _query = query;
+            _process = process;
+            
+            console.log(query);
+            if(_callSearch)
+                clearTimeout(_callSearch);
+            
+            _callSearch = setTimeout(fSeacrh, _timeout);
+        }
+        
+        function selectSource() {
+            return url.length > 0 ? searchQuery : prepareCollection();
+        }
+        
+        return {
+            execQuery: execQuery
+        };
     }
     
     function __Fake(xhr) {
@@ -954,29 +1096,46 @@ function utilerias() {
 }
 
 function templates(){
-	Handlebars.registerHelper('GetTipo', function(){
+	Handlebars.registerHelper('GetFullDate', function(){
 		return this.tipo == 1;
 	});
     
-    Handlebars.registerHelper('parseDate', function(fecha){
+    Handlebars.registerHelper('GetFullDateN', function(fecha){
         if(fecha)
             return fecha.toString().toShortDate();
         else
             return '';
 	});
     
+    Handlebars.registerHelper('GetWord', function(fecha){
+        if(fecha)
+            return fecha.toString().toShortDate();
+        else
+            return '';
+	});    
+    
 	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
         cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
         cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html()),
+        
+        rp_contratos = Handlebars.compile($('#tmp_rp_contratos').html()),
+        
         tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
-        tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html())
+        tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html()),
+        
+        tyaTmp = Handlebars.compile('{{dKey}}')
         ;
 
 	return {
         alertas: alertas,
         cbo: cbo,
+        
+        rp_contratos: rp_contratos,
+        
         tr_cliente: tr_cliente,
-        tr_equipo: tr_equipo
+        tr_equipo: tr_equipo,
+        
+        tyaTmp: tyaTmp
 	}
 }
 /* ----------------------------------------- 8.-Templates ----------------------------------------- */

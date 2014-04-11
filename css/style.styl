@@ -29,10 +29,82 @@ sombra(color = #222)
   box-shadow 3px 3px 10px color
 
 /*------------------------- 1.-Principal --------------------*/
-
+body, html
+    font-size 16px
+    height 100%
+    width 100%
+    
+.rp-contrato
+    border 1px solid #333
+    height 1495px
+    margin 0 auto
+    padding 1em
+    width 1170px
+    
+    .header
+        border-bottom 5px double #333
+        padding-bottom 0.5em
+        position relative
+        
+        figure
+            float left
+            height 11em
+            margin 0
+            width 11em
+            
+            img
+                height 100%
+                width 100%
+        
+        .info
+            margin-left 13em
+            width 45em
+            
+            small
+                display block
+                
+        .folio
+            border 1px solid #333
+            padding 0
+            position absolute
+            right 0
+            top 0
+            width 11em
+            
+            label
+                background-color #333
+                color #EEE
+                display block
+                padding 0.2em
+                
+            span
+                display block
+                padding 0.2em
+                text-align right
+    .body
+        margin 0.5em 0 1.5em 0
+        text-align justify
+    .pagare
+        border-top 5px double #333
+        padding-bottom 0.5em
+        padding-top 0.5em
+        text-align justify
 /*------------------------- 20.-Global --------------------*/
-
+.table-custom
+    width 100%
+    
+    .table-row-full
+        width 100%
+        
+    .table-row-half
+        display inline-block
+        vertical-align top
+        width 50%
 /*------------------------- 21.-Custom --------------------*/
+.borderedHR
+  border 1px solid blue
+.borderedSP, .borderedSP *
+  border 1px solid blue
 button.alert
     background-color #BF1C2D
 .fa
@@ -52,3 +124,26 @@ table
     display block
     width 100%
 /*------------------------- 22.-MediaQueries --------------------*/
+@media print
+    body, html
+        margin 0 !important
+        padding 0 !important
+        -webkit-print-color-adjust exact
+        
+    header, form
+        display none
+        
+    .rp-contrato
+        border none
+        height 1495px
+        margin 0
+        padding 0
+        width 1170px
+        
+        .header
+            .folio
+                label
+                    background-color #333 !important
+                    color #EEE !important
+                    display block
+                    padding 0.2em

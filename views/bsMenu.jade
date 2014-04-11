@@ -68,6 +68,130 @@ html
         td {{rfc}}
         td {{telefono}}
         td {{direccion.municipio}}
+        
+    script(id='tmp_rp_contratos', type='text/x-handlebars-template')
+        article.header
+            figure
+                img(src='img/logo.png') |||logotipo|||
+            div.info
+                h4.text-center
+                    strong NEUMATIC'S TOOLS
+                h5.text-center
+                    strong VENTA, RENTA Y REPARACIÓN DE EQUIPO NEUMÁTICO PARA LA INDUSTRIA MINERA Y DE LA CONSTRUCCI'ON
+                h6.text-center
+                    SANDRA VERONICA ESPARZA PEREZ
+                label.text-center
+                    small CALLE CORONA DEL ROSAL #805
+                    small COL. STANTA FE C.P. 34240
+                    small VICTORIA DE DURANGO, DURANGO TEL. Y FAX: 818-52-46.
+                    small R.F.C EAPS730209F25
+            div.folio
+                label FOLIO
+                span &nbsp
+                    {{#if folio}}
+                    {{folio}}
+                    {{/if}}
+                label FECHA
+                span {{fecha}} {{hora}}
+                
+        br
+            
+        article.body
+            label 
+                | Contrato de presentación de servicios de renta de 
+                strong 
+                {{#equipos}}
+                {{nombre}} {{descripcion}} NT-{{sku}} 
+                {{/equipos}}
+                | Que celebran por
+                | una parte el prestador de servicios SANDRA VERONICA ESPARZA PEREZ y por la otra, el usuario denominado CLIENTE.
+            br
+            p.text-center
+                strong CLAUSULAS
+            
+            label 1.-El prestador de servicios se compromete a entregar en perfectas condiciones de trabajo el equipo.
+            label 2.-El cliente tiene la obligación de verificar el buen estado en que se recibe el equipo y entregarlo de igual forma.
+            label 3.-Las piezas faltantes se cobraran en efectivo, no siendo sustituidas por otras, pues es indispensable para la uniformidad y el buen estado del equipo.
+            label 4.-En la renda del equipo NO HAY CREDITO, por lo que al devolver el equipo se deberá liquidar la renta.
+            label 5.-El cliente esta obligado a dejar un depósito por la cantidad de $ 
+                strong {{deposito}}
+                |  en DOCUMENTOS que garantiza la devolución del equipo en buen estado.
+            label 6.-El prestador de servicios se compromete a no hacer uso de este depósito, salvo si el cliente llegara a hacer mal uso del equipo, se niegue a regresar el equipo, 
+                | o se niegue a pagar la renta del mismo.
+            label 7.-En caso de que el equipo se rente en periodos mayores a 30 días, se cobrara cada 15 días.
+            label 8.-Se cobrara el día de salida y el día de entrada PRECIOS DE $ 
+                strong {{precioDia}}
+                |  POR DÍA MÁS IVA
+                            
+        article.footer
+            div.table-custom
+                div.table-row-half
+                    strong DATOS DEL CLIENTE
+                    br
+                    label NOMBRE: 
+                        strong {{nombre.nombre}} {{nombre.apaterno}} {{amaterno}} 
+                    label DIRECCIÓN: 
+                        strong {{direccion.calle}}
+                     label CIUDAD: 
+                        strong {{direccion.municipio}}
+                     label TELÉFONO: 
+                        strong {{telefono}}   
+                        
+                div.table-row-half
+                    strong DATOS DE LA OBRA
+                    br
+                    label RAZÓN SOCIAL: 
+                        strong {{direccion.colonia}}
+                    label DOMICILIO: 
+                        strong {{direccion.calle}}
+                    label CIUDAD: 
+                        strong {{direccion.municipio}}
+                    label TELÉFONO: 
+                        strong {{telefono}}
+                
+                div.table-row-full
+                    label IDENTIFICACION: 
+                        strong {{identificacion}}
+                    {{#equipos}}
+                    label EQUIPO RENTADO:  
+                        strong {{nombre}} {{accesorios}}
+                    {{/equipos}}
+            
+        br
+            
+        article.pagare
+            div
+                label
+                    | Durango, Dgo., a 
+                    strong {{GetFullDate fecha}}
+                    | Debo (emos) y pagare (emos) incondicionalmente a la orden de la SRA. SANDRA VERONICA ESPARZA PEREZ, en Durango, Dgo., el día 
+                    strong {{GetFullDateN fecha}}
+                    | la cantidad de 
+                    strong {{GetWord deposito}} 00/100 M.N.
+                    | Valor recibido a mi (nuestra) entera satisfacción, en caso de demora prometo(emos) además pagar intereses a razón de 
+                    strong {{interes}}%
+                    |  mensual
+                    | durante todo el tiempo en que este pagare permanezca total o parcialmente insoluto sin que por ello se considere prorrogado el plazo fijado.
+                
+                br
+                
+                div.table-custom
+                    div.table-row-half
+                        label NOMBRE:
+                            strong {{nombre.nombre}} {{nombre.apaterno}} {{amaterno}}
+                        label DIRECCIÓN:
+                            strong {{direccion.calle}}
+                        label COLONIA: 
+                            strong {{direccion.colonia}}
+                        label CIUDAD: 
+                            strong {{direccion.municipio}}
+                        label TELÉFONO: 
+                            strong {{telefono}}
+                    div(class='table-row-half text-center')
+                        label _________________________
+                            strong &nbsp
+                        label &nbsp
+                            strong ACEPTAMOS
   
   body
     header
@@ -264,78 +388,29 @@ html
                         td Municipio
                 tbody &nbsp
                 
-        section(class='reveal-modal1' data-reveal1)#pnlClienteConsulta
-            div
-                img(src='img/logo.png') {{logotipo}}
-                article
-                    label FOLIO
-                    span {{folio}}
-                    label FECHA
-                    span {{fecha}} {{hora}}
-                    
-                p
-                    h4 
-                        strong NEUMATIC'S TOOLS
-                    h5
-                        strong VENTA, RENTA Y REPARACI'O DE EQUIPO NEUMÁTICO PARA LA INDUSTRIA MINERA Y DE LA CONSTRUCCI'ON
-                    h6
-                        SANDRA VERONICA ESPARZA PEREZ
-                    small CALLE CORONA DEL ROSAL #805
-                    small COL. STANTA FE C.P. 34240
-                    small VICTORIA DE DURANGO, DURANGO TEL. Y FAX: 818-52-46.
-                    small R.F.C EAPS730209F25
-                    
-                | &nbsp
-                | &nbsp =============================================================================================================
-                | &nbsp
-                
-                p 
-                    | Contrato de presentación de servicios de renta de __{{equipo}} {{descripcion}} {{sku}}__ Que celebran por
-                    | una parte el prestador de servicios SANDRA VERONICA ESPARZA PEREZ y por la otra, el usuario denominado CLIENTE.
-                strong CLAUSULAS
-                
-                label 1.-El prestador de servicios se compromete a entregar en perfectas condiciones de trabajo el equipo.
-                label 2.-El cliente tiene la obligación de verificar el buen estado en que se recibe el equipo y entregarlo de igual forma.
-                label 3.-Las piezas faltantes se cobraran en efectivo, no siendo sustituidas por otras, pues es indispensable para la uniformidad y el buen estado del equipo.
-                label 4.-En la renda del equipo NO HAY CREDITO, por lo que al devolver el equipo se deberá liquidar la renta.
-                label 5.-El cliente esta obligado a dejar un depósito por la cantidad de $ __{{cantidad}}__ en DOCUMENTOS que garantiza la devolución del equipo en buen estado.
-                label 6.-El prestador de servicios se compromete a no hacer uso de este depósito, salvo si el cliente llegara a hacer mal uso del equipo, se niegue a regresar el equipo, 
-                    | o se niegue a pagar la renta del mismo.
-                label 7.-En caso de que el equipo se rente en periodos mayores a 30 días, se cobrara cada 15 días.
-                label 8.-Se cobrara el día de salida y el día de entrada PRECIOS DE $ __{{precioDia}}__ POR DÍA MÁS IVA
-                
-                p
-                    strong DATOS DEL CLIENTE
-                    strong DATOS DE LA OBRA
-                
+        section(class='reveal-modal' data-reveal)#pnlContrato
+            form
                 div.row
-                    div(class='small-6 columns')
-                        label NOMBRE:
-                            input(type='text')
-                    div(class='small-6 columns')
-                        label RAZÓN SOCIAL:
-                            input(type='text')
-                | NOMBRE: __{{nombre completo F4}}__            RAZÓN SOCIAL: __{{nombre de la empersa}}__
-                | DIRECCIÓN: __{{DIRECCION}}__                  DOMICILIO: __{{domicilio}}__
-                | CIUDAD: __{{ciudad}}__                        CIUDAD: __{{ciudad}}__
-                | TELÉFONO: __{{telefono}}__                    TELÉFONO: __{{TELEFONO}}__
-                | IDENTIFICACION: __{{numero de identificacion}}__
-                | EQUIPO RENTADO: __{{equipo rentado F4}}__
-                | &nbsp
-                | &nbsp =============================================================================================================
-                | &nbsp
-                | Durango, Dgo., a __{{dia}}__ de __{{mes}}__ del __{{año}}__
-                | Debo (emos) y pagare (emos) incondicionalmente a la orden de la SRA. SANDRA VERONICA ESPARZA PEREZ, en Durango, Dgo., el día __{{dia}} de {{mes}} del {{año}}__
-                | la cantidad de __{{cantidad en letras}} 00/100 M.N.__
-                | Valor recibido a mi (nuestra) entera satisfacción, en caso de demora prometo(emos) además pagar intereses a razón de __{{interes}}__% mensual
-                | durante todo el tiempo en que este pagare permanezca total o parcialmente insoluto sin que por ello se considere prorrogado el plazo fijado.
-                | &nbsp
-                | NOMBRE: __{{nombre completo COPIA DE ARRIBA}}__                                           _________________________
-                | DIRECCIÓN: __{{DIRECCION}}__                                                                       ACEPTAMOS
-                | COLONIA: __{{colinia}}__
-                | CIUDAD: __{{ciudad}}__
-                | TELÉFONO: __{{telefono}}__
-                
+                    div(class='small-12 columns')
+                        label Cliente:
+                            input(type='text')#tyaCliente
+                    div(class='small-10 columns')
+                        label Equipo rentado:
+                            input(type='text')#tyaEquipo
+                    div(class='small-2 columns')
+                        label &nbsp 
+                        button(type='button' class='tiny expand') 
+                            i(class='fa fa-plus') &nbsp
+                            | Agregar
+                    div(class='small-12 columns')
+                        label Accesorios:
+                            textarea#txaAccesorios
+            
+            div.rp-contrato &nbsp
+            
+    
+    br
+    
     div(class='reveal-modal medium' data-reveal)#popMessage
         section.modal-header
             h3.modal-title

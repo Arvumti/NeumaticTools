@@ -154,6 +154,22 @@ app.delete('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
     });
 });
 
+app.get('/GetClientesBySearch', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch clientes');
+    //res.writeHead(200, { 'Content-Type': 'application/json'});
+    
+    mongo.clientes.find({ activo:true }, { nombre:1 }, function (err, documents) {
+        console.log('----------------------------fetch clientes mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(documents);
+            res.json(documents);
+        }
+    });
+});
 app.get('/GetClientes', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch clientes');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
