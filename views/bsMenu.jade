@@ -77,7 +77,7 @@ html
                 h4.text-center
                     strong NEUMATIC'S TOOLS
                 h5.text-center
-                    strong VENTA, RENTA Y REPARACIÓN DE EQUIPO NEUMÁTICO PARA LA INDUSTRIA MINERA Y DE LA CONSTRUCCI'ON
+                    strong VENTA, RENTA Y REPARACIÓN DE EQUIPO NEUMÁTICO PARA LA INDUSTRIA MINERA Y DE LA CONSTRUCCIÓN
                 h6.text-center
                     SANDRA VERONICA ESPARZA PEREZ
                 label.text-center
@@ -87,22 +87,16 @@ html
                     small R.F.C EAPS730209F25
             div.folio
                 label FOLIO
-                span &nbsp
-                    {{#if folio}}
-                    {{folio}}
-                    {{/if}}
+                span {{#if folio}} {{folio}} {{/if}}
                 label FECHA
-                span {{fecha}} {{hora}}
+                span {{GetLocalDate feIni}} {{hora}}
                 
         br
             
         article.body
             label 
                 | Contrato de presentación de servicios de renta de 
-                strong 
-                {{#equipos}}
-                {{nombre}} {{descripcion}} NT-{{sku}} 
-                {{/equipos}}
+                strong {{#equipo}} {{nombre}} {{descripcion}} NT-{{sku}} {{/equipo}}
                 | Que celebran por
                 | una parte el prestador de servicios SANDRA VERONICA ESPARZA PEREZ y por la otra, el usuario denominado CLIENTE.
             br
@@ -113,14 +107,14 @@ html
             label 2.-El cliente tiene la obligación de verificar el buen estado en que se recibe el equipo y entregarlo de igual forma.
             label 3.-Las piezas faltantes se cobraran en efectivo, no siendo sustituidas por otras, pues es indispensable para la uniformidad y el buen estado del equipo.
             label 4.-En la renda del equipo NO HAY CREDITO, por lo que al devolver el equipo se deberá liquidar la renta.
-            label 5.-El cliente esta obligado a dejar un depósito por la cantidad de $ 
-                strong {{deposito}}
+            label 5.-El cliente esta obligado a dejar un depósito por la cantidad de 
+                strong ${{deposito}}
                 |  en DOCUMENTOS que garantiza la devolución del equipo en buen estado.
             label 6.-El prestador de servicios se compromete a no hacer uso de este depósito, salvo si el cliente llegara a hacer mal uso del equipo, se niegue a regresar el equipo, 
                 | o se niegue a pagar la renta del mismo.
             label 7.-En caso de que el equipo se rente en periodos mayores a 30 días, se cobrara cada 15 días.
-            label 8.-Se cobrara el día de salida y el día de entrada PRECIOS DE $ 
-                strong {{precioDia}}
+            label 8.-Se cobrara el día de salida y el día de entrada PRECIOS DE 
+                strong ${{#equipo}}{{precioDia}}{{/equipo}}
                 |  POR DÍA MÁS IVA
                             
         article.footer
@@ -128,18 +122,23 @@ html
                 div.table-row-half
                     strong DATOS DEL CLIENTE
                     br
+                    br
+                    {{#cliente}}
                     label NOMBRE: 
-                        strong {{nombre.nombre}} {{nombre.apaterno}} {{amaterno}} 
+                        strong {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} 
                     label DIRECCIÓN: 
                         strong {{direccion.calle}}
-                     label CIUDAD: 
+                    label CIUDAD: 
                         strong {{direccion.municipio}}
-                     label TELÉFONO: 
-                        strong {{telefono}}   
+                    label TELÉFONO: 
+                        strong {{telefono}}
+                    {{/cliente}}
                         
                 div.table-row-half
                     strong DATOS DE LA OBRA
                     br
+                    br
+                    {{#cliente}}
                     label RAZÓN SOCIAL: 
                         strong {{direccion.colonia}}
                     label DOMICILIO: 
@@ -148,14 +147,15 @@ html
                         strong {{direccion.municipio}}
                     label TELÉFONO: 
                         strong {{telefono}}
+                    {{/cliente}}
                 
                 div.table-row-full
                     label IDENTIFICACION: 
-                        strong {{identificacion}}
-                    {{#equipos}}
+                        strong {{#cliente}} {{identificacion}} {{/cliente}}
+                    {{#equipo}}
                     label EQUIPO RENTADO:  
-                        strong {{nombre}} {{accesorios}}
-                    {{/equipos}}
+                        strong {{nombre}}. {{accesorios}}
+                    {{/equipo}}
             
         br
             
@@ -163,11 +163,11 @@ html
             div
                 label
                     | Durango, Dgo., a 
-                    strong {{GetFullDate fecha}}
-                    | Debo (emos) y pagare (emos) incondicionalmente a la orden de la SRA. SANDRA VERONICA ESPARZA PEREZ, en Durango, Dgo., el día 
-                    strong {{GetFullDateN fecha}}
-                    | la cantidad de 
-                    strong {{GetWord deposito}} 00/100 M.N.
+                    strong {{GetFullDate feIni}}
+                    |  Debo (emos) y pagare (emos) incondicionalmente a la orden de la SRA. SANDRA VERONICA ESPARZA PEREZ, en Durango, Dgo., el día 
+                    strong {{GetFullDate feFin}}
+                    |  la cantidad de 
+                    strong {{GetWord deposito}}
                     | Valor recibido a mi (nuestra) entera satisfacción, en caso de demora prometo(emos) además pagar intereses a razón de 
                     strong {{interes}}%
                     |  mensual
@@ -177,8 +177,13 @@ html
                 
                 div.table-custom
                     div.table-row-half
+                        label Persona que recibio:
+                            strong {{recibio}}
+                        br
+                        br
+                        {{#cliente}}
                         label NOMBRE:
-                            strong {{nombre.nombre}} {{nombre.apaterno}} {{amaterno}}
+                            strong {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}}
                         label DIRECCIÓN:
                             strong {{direccion.calle}}
                         label COLONIA: 
@@ -187,6 +192,7 @@ html
                             strong {{direccion.municipio}}
                         label TELÉFONO: 
                             strong {{telefono}}
+                        {{/cliente}}
                     div(class='table-row-half text-center')
                         label _________________________
                             strong &nbsp
@@ -391,20 +397,44 @@ html
         section(class='reveal-modal' data-reveal)#pnlContrato
             form
                 div.row
-                    div(class='small-12 columns')
+                    div(class='small-12 medium-6 columns')
+                        label Deposito:
+                            div(class='row collapse')                            
+                                div(class='small-2 columns')
+                                    span(class='prefix') $
+                                div(class='small-10 columns')
+                                    input(type='text' placeholder='Deposito del pagare...')#txtDeposito
+                    div(class='small-12 medium-6 columns')
+                        label Interes:
+                            div(class='row collapse')
+                                div(class='small-10 columns')
+                                    input(type='text' placeholder='Interes %...')#txtInteres
+                                div(class='small-2 columns')
+                                    span(class='postfix') %
+                            
+                    div(class='small-12 medium-6 columns')
                         label Cliente:
-                            input(type='text')#tyaCliente
-                    div(class='small-10 columns')
+                            input(type='text' placeholder='Nombre del cliente...')#tyaCliente
+                    div(class='small-12 medium-6 columns')
                         label Equipo rentado:
-                            input(type='text')#tyaEquipo
-                    div(class='small-2 columns')
-                        label &nbsp 
-                        button(type='button' class='tiny expand') 
-                            i(class='fa fa-plus') &nbsp
-                            | Agregar
+                            input(type='text' placeholder='Nombre del equipo...')#tyaEquipo
+                    
+                    div(class='small-12 columns')
+                        label Persona que recibe:
+                            input(type='text' placeholder='Persona que recibe...')#txtRecibio
+                    
                     div(class='small-12 columns')
                         label Accesorios:
-                            textarea#txaAccesorios
+                            textarea(placeholder='Accesorios extra...')#txaAccesorios
+                            
+                    div(class='small-6 columns')
+                        button(type='button' class='small success expand')#btnGuardar 
+                            i(class='fa fa-save') &nbsp
+                            | Guardar e Imprimir
+                    div(class='small-6 columns')
+                        button(type='button' class='small expand')#btnVisualizar 
+                            i(class='fa fa-bolt') &nbsp
+                            | Visualizar
             
             div.rp-contrato &nbsp
             

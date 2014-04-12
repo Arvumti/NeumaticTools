@@ -80,6 +80,25 @@ app.get('/GetFamilias', function(req, res) {
     
 });
 
+app.get('/GetEquiposBySearch', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch equipos');
+    //res.writeHead(200, { 'Content-Type': 'application/json'});
+    console.log(req.query);
+    var search = req.query.query,
+        limit = 10;
+    
+    mongo.equipos.find({ activo:true, 'nombre':{ '$regex':search } }, { nombre:1, marca:1, precioDia:1, sku:1 }).limit(limit).exec(function (err, documents) {
+        console.log('----------------------------fetch equipos mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(documents);
+            res.json(documents);
+        }
+    });
+});
 app.get('/GetEquipos', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch equipos');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
@@ -157,8 +176,17 @@ app.delete('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
 app.get('/GetClientesBySearch', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch clientes');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
+    console.log(req.query);
+    var search = req.query.query,
+        limit = 10;
     
-    mongo.clientes.find({ activo:true }, { nombre:1 }, function (err, documents) {
+    mongo.clientes.find({ 
+        activo:true, 
+        $or: [
+            { 'nombre.nombre':{ '$regex':search } },
+            { 'nombre.apaterno':{ '$regex':search } },
+            { 'nombre.amaterno':{ '$regex':search } } 
+        ] }, { nombre:1, direccion:1, identificacion:1, telefono:1 }).limit(limit).exec(function (err, documents) {
         console.log('----------------------------fetch clientes mongo----------------------------------');
         if(err) {
             console.log('Error:'+err);
@@ -286,23 +314,22 @@ db.once('open', function callback(){
             tipo    : Number
 		}, {versionKey: false}),
         ScContratos = mongoose.Schema({
-			folio: Number,
-			idCliente   : {
-                            type    : mongoose.Schema.Types.ObjectId, 
-                            ref     : 'clientes'
-                        },
-            idEquipo    : {
-                            type    : mongoose.Schema.Types.ObjectId, 
-                            ref     : 'equipos'
-                        },
-            obra        : {
-                            nombre: String,
-                            telefono: String
-                        },
-            accesorios  : String,
-            feIni       : Date,
-            recibio     : String,
-            monto:Number
+            deposito: Number,
+            folio: Number,
+            feIni: Date,
+            feFin: Date,
+            hora: String,            
+            interes: Number,
+            recibio: String,
+            
+            cliente: {
+                type    : mongoose.Schema.Types.ObjectId, 
+                ref     : 'clientes'
+            },
+            equipo: {
+                type    : mongoose.Schema.Types.ObjectId, 
+                ref     : 'equipos'
+            }
 		}, {versionKey: false});
 
 	mongo.usuarios = mongoose.model('usuarios', ScUsuarios);

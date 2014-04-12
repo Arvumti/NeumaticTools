@@ -263,7 +263,10 @@ app.ViClienteTR = Backbone.View.extend({
 app.ViContrato = Backbone.View.extend({
     el: '#pnlContrato',
     events: {
-        'keyup #tyaCliente' : 'keyup_tyaCliente'
+        'click #btnGuardar'     : 'click_btnGuardar',
+        'click #btnVisualizar'  : 'click_btnVisualizar',
+        'keyup #tyaCliente'     : 'keyup_tyaCliente',
+        'keyup #tyaEquipo'      : 'keyup_tyaEquipo'
     },
     initialize: function() {
         var that = this;        
@@ -272,65 +275,102 @@ app.ViContrato = Backbone.View.extend({
         this.tyaCliente = this.form.find('#tyaCliente');
         this.tyaEquipo = this.form.find('#tyaEquipo');
         this.txaAccesorios = this.form.find('#txaAccesorios');
+        this.rpContrato = this.$el.find('.rp-contrato');
+        this.txtDeposito = this.$el.find('#txtDeposito');
+        this.txtInteres = this.$el.find('#txtInteres');
+        this.txtRecibio = this.$el.find('#txtRecibio');
         
-        this.busqueda = app.ut.tyAhead({elem:this.tyaCliente, url:'/GetClientesBySearch', done:done});
-        
-        this.equipos = [];
-        /*
-        [
-            {
-                nombre: '',
-                descripcion: '',
-                sku :'',
-                accesorios: []
-            }
-        ]
-        */
+        this.tyaCliente.busqueda = app.ut.tyAhead({elem:this.tyaCliente, url:'/GetClientesBySearch', done:done});
+        this.tyaEquipo.busqueda = app.ut.tyAhead({elem:this.tyaEquipo, url:'/GetEquiposBySearch', dKey:'nombre', tmp:app.templates.tyaBase});
         
         function done(data, process) {
-            var newData = [];
-            for(var i = 0; i < data.length; i++) {
-                newData.push({
-                    _id: data[i]._id,
-                    nombre: data[i].nombre,//data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno,
-                    dKey: data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno
-                });
-            }
-            process(newData);
+            for(var i = 0; i < data.length; i++)
+                data[i].dKey = data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno;
+            process(data);
         }
     },
     render: function() {
-        this.$el.find('.rp-contrato').html(app.templates.rp_contratos({}));
+        this.rpContrato.html(app.templates.rp_contratos(this.getData()));
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();
     },
-    /* ---------------------------------------- eventos ---------------------------------------- */
+    renderContrato: function() {
+        this.rpContrato.html(app.templates.rp_contratos(this.getData()));
+    },
     getData: function() {
+        var feIni = new Date(),
+            feFin = new Date(),
+            hora = (feIni.getHours() % 12).toString(),
+            minutos = feIni.getMinutes().toString(),
+            fullHora = (hora.length == 1 ? '0' + hora : hora) + ':' + (minutos.length == 1 ? '0' + minutos : minutos);
+        
+        feFin.setMonth(feFin.getMonth() + 1);
+        
         var json = {
-            folio: '',
-            fecha: '',
-            hora: '',
-            deposito: '',
-            precioDia: '',
-            telefono: '',
-            identificacion: '',
-            interes: '',
-            equipos: this.equipos,
-            nombre: {
-                nombre: '',
-                apaterno: '',
-                amaterno: ''
+            folio: 'xxx-xxx',
+            feIni: feIni,
+            feFin: feFin,
+            hora: fullHora,
+            deposito: 0,
+            interes: '_____',
+            recibio: '_____',
+            
+            cliente: {
+                _id: null,
+                telefono: '_____',
+                identificacion: '_____',
+                nombre: {
+                    nombre: '_____',
+                    apaterno: '_____',
+                    amaterno: '_____'
+                },
+                direccion: {
+                    calle: '_____',
+                    municipio: '_____',
+                    colonia: '_____',
+                    numero: '_____'
+                }
             },
-            direccion: {
-                calle: '',
-                municipio: '',
-                colonia: '',
-                numero: ''
+            equipo: {
+                _id: null,
+                nombre: '_____',
+                descripcion: '_____',
+                sku :'_____',
+                accesorios: '_____',
+                precioDia: '_____'
             }
         };
+        
+        var dataCli = this.tyaCliente.data('current'),
+            dataEqu = this.tyaEquipo.data('current');
+        
+        json.deposito = this.txtDeposito.val();
+        json.interes = this.txtInteres.val();
+        json.recibio = this.txtRecibio.val();
+        
+        if(dataCli)
+            json.cliente = dataCli;
+        
+        if(dataEqu) {
+            dataEqu.accesorios = this.txaAccesorios.val();            
+            json.equipo = dataEqu;
+        }
+        
+        return json;
+    },
+    /* ---------------------------------------- eventos ---------------------------------------- */
+    click_btnGuardar: function() {
+        
+    },
+    click_btnVisualizar: function() {
+        app.vi.Contrato.renderContrato();
     },
     keyup_tyaCliente: function(e) {
         if(e.keyCode == 13 && e.currentTarget.value.length > 0)
-            this.busqueda.execQuery();
+            app.vi.Contrato.tyaCliente.busqueda.execQuery();
+    },
+    keyup_tyaEquipo: function(e) {
+        if(e.keyCode == 13 && e.currentTarget.value.length > 0)
+            app.vi.Contrato.tyaEquipo.busqueda.execQuery();
     }
 });
 
@@ -849,8 +889,10 @@ function utilerias() {
         get     : Get,
         getJson : GetJson,
 		hide 	: Hide,
+        meses   : GetMeses(),
         message : Message,
 		show    : Show,
+        toWords : toWords,
         tyAhead : Typeahead
 	};
     
@@ -956,6 +998,11 @@ function utilerias() {
         return xrh;
     }
     
+    function GetMeses() {
+        var meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return meses;
+    }
+    
 	function Hide(fn, p_arrs) {
         __isLoading = false;
 		__loading.fadeOut();
@@ -995,7 +1042,166 @@ function utilerias() {
         __isLoading = true;
 		__loading.css({height:max + 'px'}).fadeIn().children('#topLoader').css({top:top + 'px'});
 	}
+    
+    function toWords(value) {
         
+        function Unidades(num) {
+            switch(num)
+            {
+                case 1: return 'UN';
+                case 2: return 'DOS';
+                case 3: return 'TRES';
+                case 4: return 'CUATRO';
+                case 5: return 'CINCO';
+                case 6: return 'SEIS';
+                case 7: return 'SIETE';
+                case 8: return 'OCHO';
+                case 9: return 'NUEVE';
+            }    
+            return '';
+        }
+        
+        function Decenas(num) {
+            decena = Math.floor(num/10);
+            unidad = num - (decena * 10);
+        
+            switch(decena)
+            {
+                case 1:   
+                    switch(unidad)
+                    {
+                        case 0: return 'DIEZ';
+                        case 1: return 'ONCE';
+                        case 2: return 'DOCE';
+                        case 3: return 'TRECE';
+                        case 4: return 'CATORCE';
+                        case 5: return 'QUINCE';
+                        default: return 'DIECI' + Unidades(unidad);
+                    }
+                case 2:
+                    switch(unidad)
+                    {
+                        case 0: return 'VEINTE';
+                        default: return 'VEINTI' + Unidades(unidad);
+                    }
+                case 3: return DecenasY('TREINTA', unidad);
+                case 4: return DecenasY('CUARENTA', unidad);
+                case 5: return DecenasY('CINCUENTA', unidad);
+                case 6: return DecenasY('SESENTA', unidad);
+                case 7: return DecenasY('SETENTA', unidad);
+                case 8: return DecenasY('OCHENTA', unidad);
+                case 9: return DecenasY('NOVENTA', unidad);
+                case 0: return Unidades(unidad);
+            }
+        }//Unidades()
+        
+        function DecenasY(strSin, numUnidades) {
+            if (numUnidades > 0)
+            return strSin + ' Y ' + Unidades(numUnidades)
+            
+            return strSin;
+        }//DecenasY()
+        
+        function Centenas(num) {
+            centenas = Math.floor(num / 100);
+            decenas = num - (centenas * 100);
+            
+            switch(centenas)
+            {
+                case 1:
+                    if (decenas > 0)
+                        return 'CIENTO ' + Decenas(decenas);
+                    return 'CIEN';
+                case 2: return 'DOSCIENTOS ' + Decenas(decenas);
+                case 3: return 'TRESCIENTOS ' + Decenas(decenas);
+                case 4: return 'CUATROCIENTOS ' + Decenas(decenas);
+                case 5: return 'QUINIENTOS ' + Decenas(decenas);
+                case 6: return 'SEISCIENTOS ' + Decenas(decenas);
+                case 7: return 'SETECIENTOS ' + Decenas(decenas);
+                case 8: return 'OCHOCIENTOS ' + Decenas(decenas);
+                case 9: return 'NOVECIENTOS ' + Decenas(decenas);
+            }
+            
+            return Decenas(decenas);
+        }//Centenas()
+        
+        function Seccion(num, divisor, strSingular, strPlural) {
+            cientos = Math.floor(num / divisor)
+            resto = num - (cientos * divisor)
+            
+            letras = '';
+            
+            if (cientos > 0)
+                if (cientos > 1)
+                    letras = Centenas(cientos) + ' ' + strPlural;
+            else
+                letras = strSingular;
+            
+            if (resto > 0)
+                letras += '';
+            
+            return letras;
+        }//Seccion()
+        
+        function Miles(num) {
+            divisor = 1000;
+            cientos = Math.floor(num / divisor)
+            resto = num - (cientos * divisor)
+            
+            strMiles = Seccion(num, divisor, 'MIL', 'MIL');
+            strCentenas = Centenas(resto);
+            
+            if(strMiles == '')
+                return strCentenas;
+            
+            return strMiles + ' ' + strCentenas;
+            
+            //return Seccion(num, divisor, 'UN MIL', 'MIL') + ' ' + Centenas(resto);
+        }//Miles()
+        
+        function Millones(num) {
+            divisor = 1000000;
+            cientos = Math.floor(num / divisor)
+            resto = num - (cientos * divisor)
+            
+            strMillones = Seccion(num, divisor, 'UN MILLON', 'MILLONES');
+            strMiles = Miles(resto);
+            
+            if(strMillones == '')
+                return strMiles;
+            
+            return strMillones + ' ' + strMiles;
+            
+            //return Seccion(num, divisor, 'UN MILLON', 'MILLONES') + ' ' + Miles(resto);
+        }//Millones()
+        
+        function NumeroALetras(num) {
+            var data = {
+                numero: num,
+                enteros: Math.floor(num),
+                centavos: (((Math.round(num * 100)) - (Math.floor(num) * 100))),
+                letrasCentavos: '',
+                letrasMonedaPlural: 'PESOS',
+                letrasMonedaSingular: 'PESO'
+            };
+        
+            if (data.centavos > 0)
+                data.letrasCentavos = 'CON ' + data.centavos + '/100 M.N.';
+            else
+                data.letrasCentavos = 'CON 00/100 M.N.';
+                
+        
+            if(data.enteros == 0)
+                return 'CERO ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos;
+            if (data.enteros == 1)
+                return Millones(data.enteros) + ' ' + data.letrasMonedaSingular + ' ' + data.letrasCentavos;
+            else
+                return Millones(data.enteros) + ' ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos;
+        }
+        
+        return NumeroALetras(value);
+    }
+    
     function Typeahead(json) {
         var arr = json.arr || [],
             elem = json.elem,
@@ -1003,7 +1209,7 @@ function utilerias() {
             displayKey = json.dKey || 'dKey',
             template = json.tmp || app.templates.tyaTmp,
             fail = json.fail || __Fake,
-            done = json.done || __Fake,
+            done = json.done || _FakeAhead,
             _callSearch = null,
             _query = null,
             _process = null,
@@ -1018,8 +1224,10 @@ function utilerias() {
                 suggestion: template
             }
         })
+        .data('dKey', displayKey)
         .on('typeahead:selected typeahead:autocompleted', function(e, datum) {
-            $(e.currentTarget).data('current', datum).val(datum.dKey);
+            var curElem = $(e.currentTarget);
+            curElem.data('current', datum).val(datum[curElem.data('dKey')]);
             console.log(datum)
         })
         .on('blur', function(e) {
@@ -1030,9 +1238,9 @@ function utilerias() {
                     elem.val(datum.dKey);
                 }
             }
+            else
+                elem.val('');
         });
-        
-        
         
         function execQuery() {
             if(_callSearch)
@@ -1085,6 +1293,10 @@ function utilerias() {
             return url.length > 0 ? searchQuery : prepareCollection();
         }
         
+        function _FakeAhead(data, process) {
+            process(data);
+        }
+        
         return {
             execQuery: execQuery
         };
@@ -1096,22 +1308,20 @@ function utilerias() {
 }
 
 function templates(){
-	Handlebars.registerHelper('GetFullDate', function(){
-		return this.tipo == 1;
+    Handlebars.registerHelper('GetLocalDate', function(fecha){
+		return fecha.toString().toShortDate();
 	});
     
-    Handlebars.registerHelper('GetFullDateN', function(fecha){
-        if(fecha)
-            return fecha.toString().toShortDate();
-        else
-            return '';
+	Handlebars.registerHelper('GetFullDate', function(fecha){
+        var dia = fecha.getDate(),
+            mes = fecha.getMonth(),
+            año = fecha.getFullYear();
+        
+		return dia + ' de ' + app.ut.meses[mes] + ' del ' + año;
 	});
     
-    Handlebars.registerHelper('GetWord', function(fecha){
-        if(fecha)
-            return fecha.toString().toShortDate();
-        else
-            return '';
+    Handlebars.registerHelper('GetWord', function(value){
+        return app.ut.toWords(value);
 	});    
     
 	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
@@ -1123,7 +1333,8 @@ function templates(){
         tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
         tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html()),
         
-        tyaTmp = Handlebars.compile('{{dKey}}')
+        tyaBase = Handlebars.compile('{{nombre}}'),
+        tyaTmp = Handlebars.compile('{{dKey}}')        
         ;
 
 	return {
@@ -1135,6 +1346,7 @@ function templates(){
         tr_cliente: tr_cliente,
         tr_equipo: tr_equipo,
         
+        tyaBase: tyaBase,
         tyaTmp: tyaTmp
 	}
 }
