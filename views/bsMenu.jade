@@ -68,6 +68,18 @@ html
         td {{rfc}}
         td {{telefono}}
         td {{direccion.municipio}}
+    
+    script(id='tmp_tr_contrato', type='text/x-handlebars-template')
+        td.icons
+            i(class='fa fa-bolt')
+            {{#unless abiertos}}
+            span  | 
+            i(class='fa fa-download')
+            {{/unless}}
+        td {{#cliente}} {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} {{/cliente}}
+        td {{folio}}
+        td {{GetLocalDate feIni}}
+        td {{GetLocalDate feFin}}
         
     script(id='tmp_rp_contratos', type='text/x-handlebars-template')
         article.header
@@ -319,6 +331,17 @@ html
                     button(type='button' class='btn tiny alert')#btnCancelar
                         i(class='fa fa-ban')
                         |  Cancelar
+        section(class='reveal-modal' data-reveal)#pnlClienteConsulta
+            table(class='row special')#gvClientes
+                thead
+                    tr
+                        td &nbsp
+                        td Nombre
+                        td RFC
+                        td Telefono                        
+                        td Municipio
+                tbody &nbsp
+                
         section(class='reveal-modal' data-reveal)#pnlEquipo
             form(data-abide).row
                 div(class='small-12 columns')
@@ -383,19 +406,8 @@ html
                         td Marca                        
                         td Familia
                 tbody &nbsp
-        section(class='reveal-modal' data-reveal)#pnlClienteConsulta
-            table(class='row special')#gvClientes
-                thead
-                    tr
-                        td &nbsp
-                        td Nombre
-                        td RFC
-                        td Telefono                        
-                        td Municipio
-                tbody &nbsp
-                
         section(class='reveal-modal' data-reveal)#pnlContrato
-            form
+            form(data-abide)
                 div.row
                     div(class='small-12 medium-6 columns')
                         label Deposito:
@@ -439,6 +451,17 @@ html
             div.rp-contrato &nbsp
             
     
+        section(class='reveal-modal' data-reveal)#pnlContratoConsulta
+            table(class='row special')#gvContratos
+                thead
+                    tr
+                        td &nbsp
+                        td Cliente
+                        td Folio
+                        td Fecha de inicio                        
+                        td Feche de cierre
+                tbody &nbsp
+                
     br
     
     div(class='reveal-modal medium' data-reveal)#popMessage

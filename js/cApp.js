@@ -25,7 +25,18 @@ app.MoCliente = Backbone.Model.extend({
     },
     defaults: {
         visible: 1,
-        activo: 1
+        activo: true
+    }
+});
+app.MoContrato = Backbone.Model.extend({
+    idAttribute: '_id',
+    url: function() {
+        var ruta = 'SaveContrato' + (this.id ? '/' + this.id : '');
+        return ruta;
+    },
+    defaults: {
+        visible: 1,
+        activo: true
     }
 });
 app.MoEquipo = Backbone.Model.extend({
@@ -36,7 +47,7 @@ app.MoEquipo = Backbone.Model.extend({
     },
     defaults: {
         visible: 1,
-        activo: 1
+        activo: true
     }
 });
 /* ----------------------------------------- 2.-Colecciones ----------------------------------------- */
@@ -44,12 +55,17 @@ window.CoClientesList = Backbone.Collection.extend({
     model: app.MoCliente,
     url: 'GetClientes'
 });
+window.CoContratosList = Backbone.Collection.extend({
+    model: app.MoContrato,
+    url: 'GetContratos'
+});
 window.CoEquiposList = Backbone.Collection.extend({
     model: app.MoEquipo,
     url: 'GetEquipos'
 });
 
 app.CoClientes = new window.CoClientesList();
+app.CoContratos = new window.CoContratosList();
 app.CoEquipos = new window.CoEquiposList();
 /* ----------------------------------------- 3.-Vistas ----------------------------------------- */
 app.vwMain = Backbone.View.extend({
@@ -104,7 +120,7 @@ app.ViCliente = Backbone.View.extend({
 		});
     },
     clear: function() {
-        app.vi.Cliente.form[0].reset();
+        this.form[0].reset();
     },
     hide: function() {
         this.fakeModel = null;
@@ -288,6 +304,13 @@ app.ViContrato = Backbone.View.extend({
                 data[i].dKey = data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno;
             process(data);
         }
+        
+        this.form.on('valid', function (e) {
+			e.preventDefault();
+			that.save();
+		}).on('submit', function (e) {
+			e.preventDefault();
+		});
     },
     render: function() {
         this.rpContrato.html(app.templates.rp_contratos(this.getData()));
@@ -295,6 +318,11 @@ app.ViContrato = Backbone.View.extend({
     },
     renderContrato: function() {
         this.rpContrato.html(app.templates.rp_contratos(this.getData()));
+    },
+    clear: function() {
+        this.form[0].reset();
+        this.tyaCliente.removeData('current');
+        this.tyaEquipo.removeData('current');
     },
     getData: function() {
         var feIni = new Date(),
@@ -357,9 +385,22 @@ app.ViContrato = Backbone.View.extend({
         
         return json;
     },
+    save: function() {
+        var json = new app.MoContrato(this.getData()).toJSON();
+        
+        app.CoContratos.create(json, {error:error, wait:true});
+        this.clear();
+        
+        function error(data, xrh) {
+            console.log(data);
+            console.log(xrh);
+            
+            alert(xrh.status + ' - ' + xrh.statusText + ' : ' + xrh.responseText);
+        }
+    },
     /* ---------------------------------------- eventos ---------------------------------------- */
     click_btnGuardar: function() {
-        
+        this.form.submit();
     },
     click_btnVisualizar: function() {
         app.vi.Contrato.renderContrato();
@@ -372,6 +413,44 @@ app.ViContrato = Backbone.View.extend({
         if(e.keyCode == 13 && e.currentTarget.value.length > 0)
             app.vi.Contrato.tyaEquipo.busqueda.execQuery();
     }
+});
+app.ViContratos = Backbone.View.extend({
+    el: '#pnlContratoConsulta',
+    events: {},
+    initialize: function() {
+        this.gvContratos = this.$el.find('table#gvContratos');        
+        this.listenTo(app.CoContratos, 'add', this.addTR);
+    },
+    render: function(){
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
+    },
+    addTR: function(model) {        
+        var per = new app.ViContratoTR({model:model}).render();        
+        this.gvContratos.children('tbody').prepend(per.$el);
+    }
+    /*-------------------------- Eventos --------------------------*/
+});
+app.ViContratoTR = Backbone.View.extend({
+    tagName: 'tr',
+    events: {
+        'click .fa-bolt'        : 'click_visualizar',
+        'click .fa-download'    : 'click_cerrar'
+    },
+    initialize: function() {        
+    },
+    render: function(){
+        var jData = this.model.toJSON();
+        
+        this.$el.html(app.templates.tr_contrato(jData));
+        this.model.view = this;
+        
+        return this;
+    },
+    /*-------------------------- Eventos --------------------------*/
+    click_visualizar: function() {
+        console.log(this.model);
+    },
+    click_cerrar: function() {}
 });
 
 app.ViEquipo = Backbone.View.extend({
@@ -418,8 +497,8 @@ app.ViEquipo = Backbone.View.extend({
 		});
     },
     clear: function() {
-        app.vi.Equipo.form[0].reset();
-        app.vi.Equipo.tyaFamilias.removeData('current');
+        this.form[0].reset();
+        this.tyaFamilias.removeData('current');
     },
     hide: function() {
         this.fakeModel = null;
@@ -602,7 +681,7 @@ app.router = Backbone.Router.extend({
                 app.vi.Contrato.render();
                 break;
             case 'consulta':
-                
+                app.vi.Contratos.render();
                 break;
         }
     },
@@ -642,6 +721,7 @@ function inicio(){
         Cliente: new app.ViCliente(),
         Clientes: new app.ViClientes(),
         Contrato: new app.ViContrato(),
+        Contratos: new app.ViContratos(),
         Equipo: new app.ViEquipo(),
         Equipos: new app.ViEquipos()
 	};
@@ -657,6 +737,7 @@ function inicio(){
     
     app.CoEquipos.fetch();
     app.CoClientes.fetch();
+    app.CoContratos.fetch();
     Backbone.history.start({
         root: '/'
     });
@@ -1331,6 +1412,7 @@ function templates(){
         rp_contratos = Handlebars.compile($('#tmp_rp_contratos').html()),
         
         tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
+        tr_contrato = Handlebars.compile($('#tmp_tr_contrato').html()),
         tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html()),
         
         tyaBase = Handlebars.compile('{{nombre}}'),
@@ -1344,6 +1426,7 @@ function templates(){
         rp_contratos: rp_contratos,
         
         tr_cliente: tr_cliente,
+        tr_contrato: tr_contrato,
         tr_equipo: tr_equipo,
         
         tyaBase: tyaBase,

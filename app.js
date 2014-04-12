@@ -266,6 +266,52 @@ app.delete('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
             res.json({ok:1});
     });
 });
+
+app.get('/GetContratos', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch contratos');
+    //res.writeHead(200, { 'Content-Type': 'application/json'});
+    
+    mongo.contratos
+            .find({ activo:true })
+            .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
+            .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+            .exec(function (err, documents) {
+                console.log('----------------------------fetch contratos mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    res.send('Error:'+err, 410);
+                }
+                else {
+                    console.log(documents);
+                    res.json(documents);
+                }
+            });
+});
+app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('save contratos');
+    console.log(req.body);
+    var json = req.body;
+    
+    json.folio = 0;
+    if(json.cliente)
+        json.cliente = json.cliente._id;
+    if(json.equipo)
+        json.equipo = json.equipo._id;
+    
+    var contrato = new mongo.contratos(json);
+    contrato.save(function (err, document){
+        console.log('----------------------------save contratos mongo----------------------------------');
+        
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(document);
+            res.json({_id:document._id});
+        }
+    });
+});
 /* ------------------------------- 3.-MongoDB ------------------------------- */
 mongoose.connect('mongodb://localhost/neumatics');
 var db = mongoose.connection,
@@ -311,22 +357,24 @@ db.once('open', function callback(){
         ScFamilias = mongoose.Schema({
             sku     : String,
             nombre  : String,
-            tipo    : Number
+            tipo    : Number,
+            activo  : Boolean
 		}, {versionKey: false}),
         ScContratos = mongoose.Schema({
             deposito: Number,
-            folio: Number,
-            feIni: Date,
-            feFin: Date,
-            hora: String,            
-            interes: Number,
-            recibio: String,
+            folio   : Number,
+            feIni   : Date,
+            feFin   : Date,
+            hora    : String,            
+            interes : Number,
+            recibio : String,
+            activo  : Boolean,
             
-            cliente: {
+            cliente : {
                 type    : mongoose.Schema.Types.ObjectId, 
                 ref     : 'clientes'
             },
-            equipo: {
+            equipo  : {
                 type    : mongoose.Schema.Types.ObjectId, 
                 ref     : 'equipos'
             }
