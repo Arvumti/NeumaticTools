@@ -11,6 +11,7 @@ var express = require('express'),
 	stylus = require('stylus'),
 	nib = require('nib'),
 	mongoose = require('mongoose'),
+    autoIncrement = require('mongoose-auto-increment'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
 	_ = require('lodash');
@@ -298,6 +299,7 @@ app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
     if(json.equipo)
         json.equipo = json.equipo._id;
     
+    delete json.folio;
     var contrato = new mongo.contratos(json);
     contrato.save(function (err, document){
         console.log('----------------------------save contratos mongo----------------------------------');
@@ -308,7 +310,7 @@ app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
         }
         else {
             console.log(document);
-            res.json({_id:document._id});
+            res.json({_id:document._id, folio:document.folio});            
         }
     });
 });
@@ -316,6 +318,8 @@ app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
 mongoose.connect('mongodb://localhost/neumatics');
 var db = mongoose.connection,
 	mongo = {};
+
+autoIncrement.initialize(db);
 db.on('error', console.error.bind(console, 'conection error:'));
 db.once('open', function callback(){    
 	var ScUsuarios = mongoose.Schema({
@@ -380,6 +384,8 @@ db.once('open', function callback(){
             }
 		}, {versionKey: false});
 
+    ScContratos.plugin(autoIncrement.plugin, { model: 'contratos', field: 'folio', startAt: 1, incrementBy: 1 });
+    
 	mongo.usuarios = mongoose.model('usuarios', ScUsuarios);
 	mongo.clientes = mongoose.model('clientes', ScClientes);
     mongo.equipos = mongoose.model('equipos', ScEquipos);

@@ -389,7 +389,7 @@ app.ViContrato = Backbone.View.extend({
         var json = new app.MoContrato(this.getData()).toJSON();
         
         app.CoContratos.create(json, {error:error, wait:true});
-        this.clear();
+        //this.clear();
         
         function error(data, xrh) {
             console.log(data);
