@@ -30,11 +30,11 @@ app.MoCliente = Backbone.Model.extend({
 });
 app.MoContrato = Backbone.Model.extend({
     idAttribute: '_id',
-    constructor: function() {        
+    /*constructor: function() {        
         Backbone.Model.apply(this, arguments);        
         if(this.get('feEntrega') != null)
             this.set('visible', false);
-    },
+    },*/
     url: function() {
         var ruta = 'SaveContrato' + (this.id ? '/' + this.id : '');
         return ruta;
@@ -65,6 +65,10 @@ window.CoContratosList = Backbone.Collection.extend({
     model: app.MoContrato,
     url: 'GetContratos'
 });
+window.CoContratosHistList = Backbone.Collection.extend({
+    model: app.MoContrato,
+    url: 'GetContratosHist'
+});
 window.CoEquiposList = Backbone.Collection.extend({
     model: app.MoEquipo,
     url: 'GetEquipos'
@@ -72,6 +76,7 @@ window.CoEquiposList = Backbone.Collection.extend({
 
 app.CoClientes = new window.CoClientesList();
 app.CoContratos = new window.CoContratosList();
+app.CoContratosHist = new window.CoContratosHistList();
 app.CoEquipos = new window.CoEquiposList();
 /* ----------------------------------------- 3.-Vistas ----------------------------------------- */
 app.vwMain = Backbone.View.extend({
@@ -303,10 +308,16 @@ app.ViContrato = Backbone.View.extend({
         this.txtInteres = this.$el.find('#txtInteres');
         this.txtRecibio = this.$el.find('#txtRecibio');
         
-        this.tyaCliente.busqueda = app.ut.tyAhead({elem:this.tyaCliente, url:'/GetClientesBySearch', done:done});
-        this.tyaEquipo.busqueda = app.ut.tyAhead({elem:this.tyaEquipo, url:'/GetEquiposBySearch', dKey:'nombre', tmp:app.templates.tyaBase});
+        this.tyaCliente.busqueda = app.ut.tyAhead({elem:this.tyaCliente, url:'/GetClientesBySearch', done:doneCl});
+        this.tyaEquipo.busqueda = app.ut.tyAhead({elem:this.tyaEquipo, url:'/GetEquiposBySearch', done:doneEq, tmp:app.templates.tyaBase});
         
-        function done(data, process) {
+        function doneEq(data, process) {
+            for(var i = 0; i < data.length; i++)
+                data[i].dKey = 'NT-' + data[i].sku + ' - ' + data[i].nombre;
+            process(data);
+        }
+        
+        function doneCl(data, process) {
             for(var i = 0; i < data.length; i++)
                 data[i].dKey = data[i].nombre.nombre + ' ' + data[i].nombre.apaterno + ' ' + data[i].nombre.amaterno;
             process(data);
@@ -422,13 +433,10 @@ app.ViContrato = Backbone.View.extend({
     }
 });
 app.ViContratos = Backbone.View.extend({
-    el: '#pnlContratoConsulta',
-    events: {
-        'change #cbxVigentes'   : 'click_cbxVigentes'
-    },
+    el: '#pnlContratosConsulta',
+    events: {},
     initialize: function() {
         this.txtBusqueda = this.$el.find('#txtBusqueda');
-        this.cbxVigentes = this.$el.find('#cbxVigentes');
         
         this.gvContratos = this.$el.find('table#gvContratos');        
         this.listenTo(app.CoContratos, 'add', this.addTR);
@@ -441,75 +449,25 @@ app.ViContratos = Backbone.View.extend({
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
     },
     addTR: function(model) {
-        if(model.get('visible')) {
-            var per = new app.ViContratoTR({model:model}).render();        
-            this.gvContratos.children('tbody').prepend(per.$el);
-        }
+        var per = new app.ViContratoTR({model:model}).render();        
+        this.gvContratos.children('tbody').prepend(per.$el);
     },
     /*-------------------------- Eventos --------------------------*/
-    click_cbxVigentes: function() {
-        this.txtBusqueda.val('');
-        var check = this.cbxVigentes.prop('checked'),
-            that = this;
-        
-        app.CoContratos.each(function(model) { 
-            if(check) {
-                if(model.get('feEntrega') == null) {
-                    model.set('visible', true);
-                    if(model.view == null)
-                        that.addTR(model);
-                }
-                else
-                    model.set('visible', false);
-            }
-            else {
-                if(model.get('feEntrega') == null)
-                    model.set('visible', false);
-                else {
-                    model.set('visible', true);
-                    if(model.view == null)
-                        that.addTR(model);
-                }
-            }
-        });
-    },
     keyup_txtBusqueda: function(search) {
         console.log('search: ' + search);
         
-        var check = app.vi.Contratos.cbxVigentes.prop('checked');
-        
         app.CoContratos.each(function(model) {
-            debugger;
-            if(check) {
-                if(model.get('feEntrega') == null) {
-                    var cliente = model.get('cliente').nombre,
-                        nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
-                    
-                    var regex = new RegExp(search);
-                    if(nombre.search(regex) >= 0) {
-                        model.set('visible', true);
-                        if(model.view == null)
-                            app.vi.Contratos.addTR(model);
-                    }
-                    else
-                        model.set('visible', false);
-                }
+            var cliente = model.get('cliente').nombre,
+                nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
+            
+            var regex = new RegExp(search);
+            if(nombre.search(regex) >= 0) {
+                model.set('visible', true);
+                if(model.view == null)
+                    app.vi.Contratos.addTR(model);
             }
-            else {
-                if(model.get('feEntrega') != null) {
-                    var cliente = model.get('cliente').nombre,
-                        nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
-                    
-                    var regex = new RegExp(search);
-                    if(nombre.search(regex) >= 0) {
-                        model.set('visible', true);
-                        if(model.view == null)
-                            app.vi.Contratos.addTR(model);
-                    }
-                    else
-                        model.set('visible', false);
-                }
-            }
+            else
+                model.set('visible', false);
         });
     }
 });
@@ -570,6 +528,45 @@ app.ViContratoEntrega = Backbone.View.extend({
         this.hide();
     }
 });
+app.ViContratosHistorial = Backbone.View.extend({
+    el: '#pnlContratosHist',
+    events: {},
+    initialize: function() {
+        this.txtBusqueda = this.$el.find('#txtBusqueda');
+        
+        this.gvContratos = this.$el.find('table#gvContratos');        
+        this.listenTo(app.CoContratosHist, 'add', this.addTR);
+        
+        this.call = null;
+        
+        app.ut.search({elem:this.txtBusqueda, done: this.keyup_txtBusqueda});
+    },
+    render: function(){
+        this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
+    },
+    addTR: function(model) {
+        var per = new app.ViContratoTR({model:model}).render();        
+        this.gvContratos.children('tbody').prepend(per.$el);
+    },
+    /*-------------------------- Eventos --------------------------*/
+    keyup_txtBusqueda: function(search) {
+        console.log('search: ' + search);
+        
+        app.CoContratosHist.each(function(model) {
+            var cliente = model.get('cliente').nombre,
+                nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
+            
+            var regex = new RegExp(search);
+            if(nombre.search(regex) >= 0) {
+                model.set('visible', true);
+                if(model.view == null)
+                    app.vi.ContratosHistorial.addTR(model);
+            }
+            else
+                model.set('visible', false);
+        });
+    }
+});
 app.ViContratoTR = Backbone.View.extend({
     tagName: 'tr',
     events: {
@@ -621,7 +618,6 @@ app.ViEquipo = Backbone.View.extend({
         this.txaDescripcion = this.form.find('#txaDescripcion');        
         this.txtDiasTrabajo = this.form.find('#txtDiasTrabajo');
         this.txtPrecioDia = this.form.find('#txtPrecioDia');
-        this.txtCantidad = this.form.find('#txtCantidad');
         
         app.ut.getJson({url:'GetFamilias', done:done});
         
@@ -717,8 +713,7 @@ app.ViEquipo = Backbone.View.extend({
             marca           : this.txtMarca.val(),
             descripcion     : this.txaDescripcion.val(),
             diasTrabajados  : this.txtDiasTrabajo.val(),
-            precioDia       : this.txtPrecioDia.val(),
-            cantidad        : this.txtCantidad.val()
+            precioDia       : this.txtPrecioDia.val()
         };
         
         return json;
@@ -733,7 +728,6 @@ app.ViEquipo = Backbone.View.extend({
         this.txaDescripcion.val(json.descripcion);
         this.txtDiasTrabajo.val(json.diasTrabajados);
         this.txtPrecioDia.val(json.precioDia);
-        this.txtCantidad.val(json.cantidad);
     }
 });
 app.ViEquipos = Backbone.View.extend({
@@ -833,6 +827,9 @@ app.router = Backbone.Router.extend({
             case 'consulta':
                 app.vi.Contratos.render();
                 break;
+            case 'historial':
+                app.vi.ContratosHistorial.render();
+                break;
         }
     },
     equipo: function(estado) {
@@ -873,6 +870,7 @@ function inicio(){
         Contrato: new app.ViContrato(),
         Contratos: new app.ViContratos(),
         ContratoEntrega: new app.ViContratoEntrega(),
+        ContratosHistorial: new app.ViContratosHistorial(),
         Equipo: new app.ViEquipo(),
         Equipos: new app.ViEquipos()
 	};
@@ -889,6 +887,7 @@ function inicio(){
     app.CoEquipos.fetch();
     app.CoClientes.fetch();
     app.CoContratos.fetch();
+    app.CoContratosHist.fetch();
     Backbone.history.start({
         root: '/'
     });
@@ -1610,7 +1609,7 @@ function templates(){
         tr_contrato_entrega = Handlebars.compile($('#tmp_tr_contrato_entrega').html()),
         tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html()),
         
-        tyaBase = Handlebars.compile('{{nombre}}'),
+        tyaBase = Handlebars.compile('NT-{{sku}} - {{nombre}}'),
         tyaTmp = Handlebars.compile('{{dKey}}')        
         ;
 

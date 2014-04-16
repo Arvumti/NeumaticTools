@@ -56,6 +56,7 @@ html
             i(class='fa fa-trash-o')
         td NT-{{sku}}
         td {{nombre}}
+        td {{diasTrabajados}}
         td {{marca}}
         td {{idFamilia.nombre}}
         
@@ -76,7 +77,9 @@ html
         td {{#cliente}} {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} {{/cliente}}
         td {{folio}}
         td {{GetLocalDate feIni}}
+        {{#if feEntrega}}
         td {{GetLocalDate feEntrega}}
+        {{/if}}
         
     script(id='tmp_tr_contrato_entrega', type='text/x-handlebars-template')
         tr
@@ -268,6 +271,10 @@ html
                                 a(href='#contrato/consulta')
                                     i(class='fa fa-list') &nbsp
                                     | Consulta
+                            li
+                                a(href='#contrato/historial')
+                                    i(class='fa fa-calendar') &nbsp
+                                    | Historial
                 ul.right
                     li.divider
                     li.has-dropdown
@@ -376,18 +383,14 @@ html
                     label Descripcion:
                         textarea(placeholder='Descripcion...')#txaDescripcion
                 
-                div(class='small-12 medium-4 columns')
+                div(class='small-12 medium-6 columns')
                     label Dias trabajados:
                         input(type='text' placeholder='Dias trabajados...' required pattern='integer')#txtDiasTrabajo
                         small.error Los dias trabajados son requeridos y tienen que ser un valor numerico
-                div(class='small-12 medium-4 columns')
+                div(class='small-12 medium-6 columns')
                     label Precio por dia:
                         input(type='text' placeholder='Precio por dia...' required pattern='integer')#txtPrecioDia
                         small.error El percio por dia es requerido y tiene que ser un valor numerico
-                div(class='small-12 medium-4 columns')
-                    label Inventario:
-                        input(type='text' placeholder='Cantidad existente...' required pattern='integer')#txtCantidad
-                        small.error La cantidad es requerida y tiene que ser un valor numerico
                 
                 div(class='small-12 columns')
                     button(type='button' class='btn tiny success')#btnGuardar
@@ -409,6 +412,7 @@ html
                         td &nbsp
                         td NE
                         td Nombre
+                        td Días
                         td Marca                        
                         td Familia
                 tbody &nbsp
@@ -457,9 +461,12 @@ html
             div.rp-contrato &nbsp
             
     
-        section(class='reveal-modal' data-reveal)#pnlContratoConsulta
+        section(class='reveal-modal' data-reveal)#pnlContratosConsulta
             div(class='row special')
-                div(class='small-11 columns')
+                div(class='small-12 columns')
+                    h3 Consutla de Contratos
+                    
+                div(class='small-12 columns')
                     label Busqueda:
                         div(class='row collapse')                            
                             div(class='small-1 columns')
@@ -468,19 +475,40 @@ html
                             div(class='small-11 columns')
                                 input(type='text' placeholder='Busqueda por nombre de cliente...')#txtBusqueda
                 
-                div(class='small-1 columns')
-                    label Vigentes:
-                        input(type='checkbox' class='big-checkbox regular-checkbox' checked)#cbxVigentes
-                        
-            table(class='row special')#gvContratos
-                thead
-                    tr
-                        td &nbsp
-                        td Cliente
-                        td Folio
-                        td Fecha de inicio                        
-                        td Feche de cierre
-                tbody &nbsp
+                div(class='small-12 columns')        
+                    table(class='special')#gvContratos
+                        thead
+                            tr
+                                td &nbsp
+                                td Cliente
+                                td Folio
+                                td Fecha de inicio
+                        tbody &nbsp
+                
+        section(class='reveal-modal' data-reveal)#pnlContratosHist
+            div(class='row special')
+                div(class='small-12 columns')
+                    h3 Historial de Contratos
+                    
+                div(class='small-12 columns')
+                    label Busqueda:
+                        div(class='row collapse')                            
+                            div(class='small-1 columns')
+                                span(class='prefix')
+                                    i(class='fa fa-search')
+                            div(class='small-11 columns')
+                                input(type='text' placeholder='Busqueda por nombre de cliente...')#txtBusqueda
+                
+                div(class='small-12 columns')        
+                    table(class='special')#gvContratos
+                        thead
+                            tr
+                                td &nbsp
+                                td Cliente
+                                td Folio
+                                td Fecha de inicio
+                                td Fecha de final
+                        tbody &nbsp
          
         section(class='reveal-modal' data-reveal)#popContratoEntrega
             section.modal-header

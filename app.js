@@ -88,7 +88,12 @@ app.get('/GetEquiposBySearch', /*ensureAuthenticated,*/ function (req, res){
     var search = req.query.query,
         limit = 10;
     
-    mongo.equipos.find({ activo:true, 'nombre':{ '$regex':search } }, { nombre:1, marca:1, precioDia:1, sku:1 }).limit(limit).exec(function (err, documents) {
+    mongo.equipos.find({ 
+        activo:true, 
+        $or: [
+            { 'nombre':{ '$regex':search } },
+            { sku:{ '$regex':search } }
+        ] }, { nombre:1, marca:1, precioDia:1, sku:1 }).limit(limit).exec(function (err, documents) {
         console.log('----------------------------fetch equipos mongo----------------------------------');
         if(err) {
             console.log('Error:'+err);
@@ -186,7 +191,7 @@ app.get('/GetClientesBySearch', /*ensureAuthenticated,*/ function (req, res){
         $or: [
             { 'nombre.nombre':{ '$regex':search } },
             { 'nombre.apaterno':{ '$regex':search } },
-            { 'nombre.amaterno':{ '$regex':search } } 
+            { 'nombre.amaterno':{ '$regex':search } }
         ] }, { nombre:1, direccion:1, identificacion:1, telefono:1 }).limit(limit).exec(function (err, documents) {
         console.log('----------------------------fetch clientes mongo----------------------------------');
         if(err) {
@@ -273,7 +278,27 @@ app.get('/GetContratos', /*ensureAuthenticated,*/ function (req, res){
     //res.writeHead(200, { 'Content-Type': 'application/json'});
     
     mongo.contratos
-            .find({ activo:true })
+            .find({ activo:true, feEntrega:null })
+            .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
+            .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+            .exec(function (err, documents) {
+                console.log('----------------------------fetch contratos mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    res.send('Error:'+err, 410);
+                }
+                else {
+                    console.log(documents);
+                    res.json(documents);
+                }
+            });
+});
+app.get('/GetContratosHist', /*ensureAuthenticated,*/ function (req, res){
+    console.log('fetch contratos');
+    //res.writeHead(200, { 'Content-Type': 'application/json'});
+    
+    mongo.contratos
+            .find({ activo:true, feEntrega:{$ne:null} })
             .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
             .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
             .exec(function (err, documents) {
@@ -344,14 +369,16 @@ db.once('open', function callback(){
             activo          : Boolean
 		}, {versionKey: false}),
         ScEquipos = mongoose.Schema({
-            sku             : String,
+            sku             : {
+                                type    : String,
+                                unique  : true
+                            },
             nombre          : String,
             descripcion     : String,
             descBaja        : String,
             marca           : String,
             precioDia       : Number,
             diasTrabajados  : Number,
-            cantidad        : Number,
             activo          : Boolean,
             idFamilia       : {
                                 type    : mongoose.Schema.Types.ObjectId, 
