@@ -72,14 +72,20 @@ html
     script(id='tmp_tr_contrato', type='text/x-handlebars-template')
         td.icons
             i(class='fa fa-bolt')
-            {{#unless abiertos}}
-            span  | 
-            i(class='fa fa-download')
-            {{/unless}}
+            {{SetIconEntrega feEntrega}}
         td {{#cliente}} {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} {{/cliente}}
         td {{folio}}
         td {{GetLocalDate feIni}}
-        td {{GetLocalDate feFin}}
+        td {{GetLocalDate feEntrega}}
+        
+    script(id='tmp_tr_contrato_entrega', type='text/x-handlebars-template')
+        tr
+            td {{cliente}}
+            td {{GetLocalDate inicio}}
+            td {{GetLocalDate final}}
+            td {{dias}}
+            td.text-right $ {{precioDias}}
+            td.text-right $ {{total}}
         
     script(id='tmp_rp_contratos', type='text/x-handlebars-template')
         article.header
@@ -452,6 +458,20 @@ html
             
     
         section(class='reveal-modal' data-reveal)#pnlContratoConsulta
+            div(class='row special')
+                div(class='small-11 columns')
+                    label Busqueda:
+                        div(class='row collapse')                            
+                            div(class='small-1 columns')
+                                span(class='prefix')
+                                    i(class='fa fa-search')
+                            div(class='small-11 columns')
+                                input(type='text' placeholder='Busqueda por nombre de cliente...')#txtBusqueda
+                
+                div(class='small-1 columns')
+                    label Vigentes:
+                        input(type='checkbox' class='big-checkbox regular-checkbox' checked)#cbxVigentes
+                        
             table(class='row special')#gvContratos
                 thead
                     tr
@@ -461,7 +481,38 @@ html
                         td Fecha de inicio                        
                         td Feche de cierre
                 tbody &nbsp
-                
+         
+        section(class='reveal-modal' data-reveal)#popContratoEntrega
+            section.modal-header
+                h3.modal-title Entrega de equipo
+            section(class='modal-body')
+                form.row                    
+                    div(class='small-12 columns')
+                        table.special#gvDatos
+                            thead
+                                tr
+                                    td Cliente
+                                    td Inicio
+                                    td Fin
+                                    td Días
+                                    td Precio
+                                    td Total
+                            tbody &nbsp
+                    
+                    div(class='small-12 columns')
+                        label Comprobante de pago:
+                            input(type='text' placeholder='Nota o factura...')#txtComprobante
+            br
+            section(class='modal-footer text-right')
+                div.row
+                    div(class='small-6 columns')
+                        button(type='button' class='button expand tiny success custom-button')#btnAceptar
+                            i(class='fa fa-check') &nbsp
+                            span.show-for-medium-up Aceptar
+                    div(class='small-6 columns')
+                        button(type='button' class='button expand tiny alert custom-button')#btnCancelar
+                            i(class='fa fa-ban') &nbsp
+                            span.show-for-medium-up Cancelar
     br
     
     div(class='reveal-modal medium' data-reveal)#popMessage

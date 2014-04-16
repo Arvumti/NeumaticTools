@@ -366,19 +366,20 @@ db.once('open', function callback(){
 		}, {versionKey: false}),
         ScContratos = mongoose.Schema({
             deposito: Number,
-            folio   : Number,
-            feIni   : Date,
-            feFin   : Date,
-            hora    : String,            
-            interes : Number,
-            recibio : String,
-            activo  : Boolean,
+            folio       : Number,
+            feIni       : Date,
+            feFin       : Date,
+            feEntrega   : Date,
+            hora        : String,            
+            interes     : Number,
+            recibio     : String,
+            activo      : Boolean,
             
-            cliente : {
+            cliente     : {
                 type    : mongoose.Schema.Types.ObjectId, 
                 ref     : 'clientes'
             },
-            equipo  : {
+            equipo      : {
                 type    : mongoose.Schema.Types.ObjectId, 
                 ref     : 'equipos'
             }

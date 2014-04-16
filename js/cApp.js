@@ -30,13 +30,19 @@ app.MoCliente = Backbone.Model.extend({
 });
 app.MoContrato = Backbone.Model.extend({
     idAttribute: '_id',
+    constructor: function() {        
+        Backbone.Model.apply(this, arguments);        
+        if(this.get('feEntrega') != null)
+            this.set('visible', false);
+    },
     url: function() {
         var ruta = 'SaveContrato' + (this.id ? '/' + this.id : '');
         return ruta;
     },
     defaults: {
-        visible: 1,
-        activo: true
+        visible: true,
+        activo: true,
+        feEntrega: null
     }
 });
 app.MoEquipo = Backbone.Model.extend({
@@ -162,6 +168,7 @@ app.ViCliente = Backbone.View.extend({
         this.hTitulo.text(jData.title);
         this.setData(this.fakeModel.toJSON());
         this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+        this.txtNombre.doFocus();
     },
     /* ---------------------------------------- eventos ---------------------------------------- */
     click_btnCancelar: function() {
@@ -389,7 +396,7 @@ app.ViContrato = Backbone.View.extend({
         var json = new app.MoContrato(this.getData()).toJSON();
         
         app.CoContratos.create(json, {error:error, wait:true});
-        //this.clear();
+        this.clear();
         
         function error(data, xrh) {
             console.log(data);
@@ -416,41 +423,182 @@ app.ViContrato = Backbone.View.extend({
 });
 app.ViContratos = Backbone.View.extend({
     el: '#pnlContratoConsulta',
-    events: {},
+    events: {
+        'change #cbxVigentes'   : 'click_cbxVigentes'
+    },
     initialize: function() {
+        this.txtBusqueda = this.$el.find('#txtBusqueda');
+        this.cbxVigentes = this.$el.find('#cbxVigentes');
+        
         this.gvContratos = this.$el.find('table#gvContratos');        
         this.listenTo(app.CoContratos, 'add', this.addTR);
+        
+        this.call = null;
+        
+        app.ut.search({elem:this.txtBusqueda, done: this.keyup_txtBusqueda});
     },
     render: function(){
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
     },
-    addTR: function(model) {        
-        var per = new app.ViContratoTR({model:model}).render();        
-        this.gvContratos.children('tbody').prepend(per.$el);
-    }
+    addTR: function(model) {
+        if(model.get('visible')) {
+            var per = new app.ViContratoTR({model:model}).render();        
+            this.gvContratos.children('tbody').prepend(per.$el);
+        }
+    },
     /*-------------------------- Eventos --------------------------*/
+    click_cbxVigentes: function() {
+        this.txtBusqueda.val('');
+        var check = this.cbxVigentes.prop('checked'),
+            that = this;
+        
+        app.CoContratos.each(function(model) { 
+            if(check) {
+                if(model.get('feEntrega') == null) {
+                    model.set('visible', true);
+                    if(model.view == null)
+                        that.addTR(model);
+                }
+                else
+                    model.set('visible', false);
+            }
+            else {
+                if(model.get('feEntrega') == null)
+                    model.set('visible', false);
+                else {
+                    model.set('visible', true);
+                    if(model.view == null)
+                        that.addTR(model);
+                }
+            }
+        });
+    },
+    keyup_txtBusqueda: function(search) {
+        console.log('search: ' + search);
+        
+        var check = app.vi.Contratos.cbxVigentes.prop('checked');
+        
+        app.CoContratos.each(function(model) {
+            debugger;
+            if(check) {
+                if(model.get('feEntrega') == null) {
+                    var cliente = model.get('cliente').nombre,
+                        nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
+                    
+                    var regex = new RegExp(search);
+                    if(nombre.search(regex) >= 0) {
+                        model.set('visible', true);
+                        if(model.view == null)
+                            app.vi.Contratos.addTR(model);
+                    }
+                    else
+                        model.set('visible', false);
+                }
+            }
+            else {
+                if(model.get('feEntrega') != null) {
+                    var cliente = model.get('cliente').nombre,
+                        nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno;
+                    
+                    var regex = new RegExp(search);
+                    if(nombre.search(regex) >= 0) {
+                        model.set('visible', true);
+                        if(model.view == null)
+                            app.vi.Contratos.addTR(model);
+                    }
+                    else
+                        model.set('visible', false);
+                }
+            }
+        });
+    }
+});
+app.ViContratoEntrega = Backbone.View.extend({
+    el: '#popContratoEntrega',
+    events: {
+        'click #btnCancelar': 'click_btnCancelar'
+    },
+    initialize: function() {
+        this.form = this.$el.find('form');
+        
+        this.gvDatos = this.form.find('#gvDatos');
+        this.txtComprobante = this.form.find('#txtComprobante');
+    },
+    render: function(model){
+        this.clear();
+        
+        var cliente = model.get('cliente').nombre,
+            nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno,
+            precioDia = model.get('equipo').precioDia,
+            feIni = new Date(model.get('feIni')),
+            
+            feEntrega = new Date(),
+            count = 0;
+        
+        do {
+            console.log('NumAnt: ' + feIni.getDate());
+            feIni.setDate(feIni.getDate() + 1);
+            
+            console.log('Num: ' + feIni.getDate() + ' - Dia:' + feIni.getDay() + ' - ContAnt: ' + count);
+            if(feIni.getDay() > 0)
+                count++;
+            console.log('Cont: ' + count);
+        } while(feIni.toString().toShortDate() < feEntrega.toString().toShortDate());
+        
+        var json = {
+            cliente: nombre,
+            inicio: model.get('feIni'),
+            final: feEntrega,
+            dias: count,
+            precioDias: precioDia,
+            total: count * precioDia
+        };
+        
+        this.gvDatos.children('tbody').html(app.templates.tr_contrato_entrega(json));        
+        this.$el.foundation('reveal', 'open');
+        
+        this.txtComprobante.doFocus();
+    },
+    clear: function() {
+        this.form[0].reset();
+    },
+    hide: function() {
+        this.$el.foundation('reveal', 'close');
+    },
+    /*-------------------------- Eventos --------------------------*/
+    click_btnCancelar: function() {
+        this.hide();
+    }
 });
 app.ViContratoTR = Backbone.View.extend({
     tagName: 'tr',
     events: {
         'click .fa-bolt'        : 'click_visualizar',
-        'click .fa-download'    : 'click_cerrar'
+        'click .fa-download'    : 'click_entrega'
     },
-    initialize: function() {        
+    initialize: function() {
+        this.listenTo(this.model, 'change:visible', this.check_Visible);
     },
     render: function(){
-        var jData = this.model.toJSON();
-        
+        var jData = this.model.toJSON();        
         this.$el.html(app.templates.tr_contrato(jData));
-        this.model.view = this;
+        this.model.view = this;    
         
         return this;
     },
     /*-------------------------- Eventos --------------------------*/
+    check_Visible: function() {
+        if(this.model.get('visible') == false) {
+            this.model.view = null;
+            this.remove();
+        }
+    },
     click_visualizar: function() {
         console.log(this.model);
     },
-    click_cerrar: function() {}
+    click_entrega: function() {
+        app.vi.ContratoEntrega.render(this.model);
+    }
 });
 
 app.ViEquipo = Backbone.View.extend({
@@ -541,6 +689,8 @@ app.ViEquipo = Backbone.View.extend({
         this.hTitulo.text(jData.title);
         this.setData(this.fakeModel.toJSON());
         this.$el.addClass('reveal-modal').foundation('reveal', 'open');
+        
+        this.tyaFamilias.doFocus();
     },
     /* ---------------------------------------- eventos ---------------------------------------- */
     click_btnCancelar: function() {
@@ -722,6 +872,7 @@ function inicio(){
         Clientes: new app.ViClientes(),
         Contrato: new app.ViContrato(),
         Contratos: new app.ViContratos(),
+        ContratoEntrega: new app.ViContratoEntrega(),
         Equipo: new app.ViEquipo(),
         Equipos: new app.ViEquipos()
 	};
@@ -972,8 +1123,9 @@ function utilerias() {
 		hide 	: Hide,
         meses   : GetMeses(),
         message : Message,
+        search  : Search,
 		show    : Show,
-        toWords : toWords,
+        toWords : ToWords,
         tyAhead : Typeahead
 	};
     
@@ -1101,6 +1253,41 @@ function utilerias() {
 		}, time);
 	}
     
+    function Search(json) {
+        var elem = json.elem,
+            _done = json.done,
+            _timeout = json.timeout || 1000,
+            search = '',
+            currSearch = '',
+            callback = null;
+        
+        elem.on('keyup', keyup_search);
+        function keyup_search(e) {
+            search = e.currentTarget.value;
+            
+            if(currSearch == search) {
+                clearTimeout(callback);
+            }
+            else if(e.keyCode == 13) {
+                clearTimeout(callback);
+                ExecSearch();
+                return;
+            }
+            else {            
+                if(callback != null)
+                    clearTimeout(callback);
+                
+                callback = setTimeout(ExecSearch, _timeout);
+            }
+        }
+        
+        function ExecSearch() {
+            currSearch = search;
+            _done(search);
+            callback = null;
+        }
+    }
+    
 	function Show() {
         var h1 = $(document).height();
         var h2 = $('body').height();
@@ -1124,7 +1311,7 @@ function utilerias() {
 		__loading.css({height:max + 'px'}).fadeIn().children('#topLoader').css({top:top + 'px'});
 	}
     
-    function toWords(value) {
+    function ToWords(value) {
         
         function Unidades(num) {
             switch(num)
@@ -1389,8 +1576,15 @@ function utilerias() {
 }
 
 function templates(){
+    Handlebars.registerHelper('SetIconEntrega', function(feEntrega){
+        if(feEntrega == null)
+		  return new Handlebars.SafeString('<span> |</span> <i class="fa fa-download"></i>');
+        
+        return '';
+	});
+    
     Handlebars.registerHelper('GetLocalDate', function(fecha){
-		return fecha.toString().toShortDate();
+		return fecha == null ? '' : fecha.toString().toShortDate();
 	});
     
 	Handlebars.registerHelper('GetFullDate', function(fecha){
@@ -1413,6 +1607,7 @@ function templates(){
         
         tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
         tr_contrato = Handlebars.compile($('#tmp_tr_contrato').html()),
+        tr_contrato_entrega = Handlebars.compile($('#tmp_tr_contrato_entrega').html()),
         tr_equipo = Handlebars.compile($('#tmp_tr_equipo').html()),
         
         tyaBase = Handlebars.compile('{{nombre}}'),
@@ -1427,6 +1622,7 @@ function templates(){
         
         tr_cliente: tr_cliente,
         tr_contrato: tr_contrato,
+        tr_contrato_entrega: tr_contrato_entrega,
         tr_equipo: tr_equipo,
         
         tyaBase: tyaBase,
@@ -1437,6 +1633,15 @@ function templates(){
 /* ----------------------------------------- 9.-Pruebas ----------------------------------------- */
 /* ----------------------------------------- 0.-Prototype ----------------------------------------- */
 function Bases(){
+    jQuery.fn.extend({
+        doFocus: function() {
+            var that = this;
+            setTimeout(function() { 
+                that.focus();
+            }, 1000);
+        }
+    });
+    
     if (typeof Number.prototype.getDecimals != 'function') {
 		// see below for better implementation!
 		Number.prototype.round = function (value){
