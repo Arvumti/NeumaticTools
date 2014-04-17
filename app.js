@@ -239,7 +239,7 @@ app.post('/SaveCliente', /*ensureAuthenticated,*/ function(req, res) {
     });
 });
 app.put('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update eqclienteuipo');
+    console.log('update cliente');
     console.log(req.body);
     
     var id = req.body._id.toString();    
@@ -339,6 +339,38 @@ app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
         }
     });
 });
+app.put('/SaveContrato/:id', /*ensureAuthenticated,*/ function(req, res) {
+    console.log('update contrato');
+    console.log(req.body);
+    
+    var id = req.body._id.toString();    
+    json = req.body;
+    delete json._id;    
+    if(json.cliente)
+        json.cliente = json.cliente._id;
+    if(json.equipo)
+        json.equipo = json.equipo._id;
+    
+    console.log(id);    
+    mongo.contratos.update({_id:id}, json, {multi:false}, function(err) {
+        console.log('----------------------------update contrato mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            //{ $inc: { views: 1 }}
+            mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta } }, function (err) {
+                if(err) {
+                    console.log('Error:'+err);
+                    res.send('Error:'+err, 410);
+                }
+                else                
+                    res.send();
+            });
+        }
+    });
+});
 /* ------------------------------- 3.-MongoDB ------------------------------- */
 mongoose.connect('mongodb://localhost/neumatics');
 var db = mongoose.connection,
@@ -401,6 +433,7 @@ db.once('open', function callback(){
             interes     : Number,
             recibio     : String,
             activo      : Boolean,
+            diasRenta   : Number,
             
             cliente     : {
                 type    : mongoose.Schema.Types.ObjectId, 

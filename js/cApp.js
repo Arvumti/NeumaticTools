@@ -42,7 +42,8 @@ app.MoContrato = Backbone.Model.extend({
     defaults: {
         visible: true,
         activo: true,
-        feEntrega: null
+        feEntrega: null,
+        diasRenta: 0
     }
 });
 app.MoEquipo = Backbone.Model.extend({
@@ -474,6 +475,7 @@ app.ViContratos = Backbone.View.extend({
 app.ViContratoEntrega = Backbone.View.extend({
     el: '#popContratoEntrega',
     events: {
+        'click #btnAceptar': 'click_btnAceptar',
         'click #btnCancelar': 'click_btnCancelar'
     },
     initialize: function() {
@@ -481,9 +483,13 @@ app.ViContratoEntrega = Backbone.View.extend({
         
         this.gvDatos = this.form.find('#gvDatos');
         this.txtComprobante = this.form.find('#txtComprobante');
+        
+        this.modelFake = null;
+        this.data = null;
     },
     render: function(model){
         this.clear();
+        this.modelFake = model;
         
         var cliente = model.get('cliente').nombre,
             nombre = cliente.nombre + ' ' + cliente.apaterno + ' ' + cliente.amaterno,
@@ -494,16 +500,12 @@ app.ViContratoEntrega = Backbone.View.extend({
             count = 0;
         
         do {
-            console.log('NumAnt: ' + feIni.getDate());
             feIni.setDate(feIni.getDate() + 1);
-            
-            console.log('Num: ' + feIni.getDate() + ' - Dia:' + feIni.getDay() + ' - ContAnt: ' + count);
             if(feIni.getDay() > 0)
                 count++;
-            console.log('Cont: ' + count);
         } while(feIni.toString().toShortDate() < feEntrega.toString().toShortDate());
         
-        var json = {
+        this.data = {
             cliente: nombre,
             inicio: model.get('feIni'),
             final: feEntrega,
@@ -512,18 +514,28 @@ app.ViContratoEntrega = Backbone.View.extend({
             total: count * precioDia
         };
         
-        this.gvDatos.children('tbody').html(app.templates.tr_contrato_entrega(json));        
+        this.gvDatos.children('tbody').html(app.templates.tr_contrato_entrega(this.data));        
         this.$el.foundation('reveal', 'open');
         
         this.txtComprobante.doFocus();
     },
     clear: function() {
         this.form[0].reset();
+        this.modelFake = null;
+        this.data = {};
     },
     hide: function() {
         this.$el.foundation('reveal', 'close');
     },
     /*-------------------------- Eventos --------------------------*/
+    click_btnAceptar: function() {
+        this.modelFake.save({feEntrega:this.data.final, diasRenta:this.data.dias});
+        this.modelFake.view.remove();
+        app.CoContratosHist.add(this.modelFake);
+        app.CoContratos.remove(this.modelFake);
+        
+        this.hide();
+    },
     click_btnCancelar: function() {
         this.hide();
     }
@@ -1251,6 +1263,35 @@ function utilerias() {
 			alerta.find('.close').click();
 		}, time);
 	}
+    
+    function Print(json) {
+        var modal = json.el || $('#popImprimir'),
+			body = json.body || '/';
+
+		modal.find('.modal-body').html(body);
+
+		modal.find('#btnAceptar').off('click').on('click', fnDone);
+		modal.find('#btnCancelar').off('click').on('click', fnHide);
+        modal.off('close').on('close', fnHide);
+
+		modal.foundation('reveal', 'open');
+
+		function fnDone() {
+            modal.off('close');
+            if(valores.fnA && typeof valores.fnA === "function")
+                valores.fnA();
+			modal.foundation('reveal', 'close');
+		}
+
+		function fnHide(e) {            
+            if(valores.fnC && typeof valores.fnC === "function") {
+                valores.fnC();
+                modal.off('close');
+            }
+            if(e.type != 'close')
+                modal.foundation('reveal', 'close');
+		}
+    }
     
     function Search(json) {
         var elem = json.elem,
