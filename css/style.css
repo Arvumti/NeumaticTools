@@ -80,6 +80,9 @@ html {
   text-align: justify;
 }
 /*------------------------- 20.-Global --------------------*/
+#print-area {
+  display: none;
+}
 /*------------------------- 21.-Custom --------------------*/
 .big-checkbox {
   padding: 18px !important;
@@ -175,8 +178,12 @@ table.special {
     -webkit-print-color-adjust: exact;
   }
   header,
-  form {
-    display: none;
+  main,
+  .reveal-modal {
+    display: none !important;
+  }
+  #print-area {
+    display: block;
   }
   .rp-contrato {
     border: none;

@@ -604,6 +604,9 @@ app.ViContratoTR = Backbone.View.extend({
     },
     click_visualizar: function() {
         console.log(this.model);
+        
+        var template = app.templates.rp_contratos(this.model.toJSON());
+        app.ut.print({body:template, class:'rp-contrato'});
     },
     click_entrega: function() {
         app.vi.ContratoEntrega.render(this.model);
@@ -1134,6 +1137,7 @@ function utilerias() {
 		hide 	: Hide,
         meses   : GetMeses(),
         message : Message,
+        print   : Print,
         search  : Search,
 		show    : Show,
         toWords : ToWords,
@@ -1266,11 +1270,13 @@ function utilerias() {
     
     function Print(json) {
         var modal = json.el || $('#popImprimir'),
-			body = json.body || '/';
+			body = json.body || '/',
+            clase = json.class || '';
+        
+        $('#print-area').removeClass().addClass(clase).html(body);
+		modal.find('#modal-body').removeClass().addClass(clase).html(body);
 
-		modal.find('.modal-body').html(body);
-
-		modal.find('#btnAceptar').off('click').on('click', fnDone);
+		modal.find('#btnImprimir').off('click').on('click', fnDone);
 		modal.find('#btnCancelar').off('click').on('click', fnHide);
         modal.off('close').on('close', fnHide);
 
@@ -1278,16 +1284,12 @@ function utilerias() {
 
 		function fnDone() {
             modal.off('close');
-            if(valores.fnA && typeof valores.fnA === "function")
-                valores.fnA();
+            window.print();
 			modal.foundation('reveal', 'close');
 		}
 
-		function fnHide(e) {            
-            if(valores.fnC && typeof valores.fnC === "function") {
-                valores.fnC();
-                modal.off('close');
-            }
+		function fnHide(e) {
+            modal.off('close');
             if(e.type != 'close')
                 modal.foundation('reveal', 'close');
 		}
@@ -1628,9 +1630,11 @@ function templates(){
 	});
     
 	Handlebars.registerHelper('GetFullDate', function(fecha){
-        var dia = fecha.getDate(),
-            mes = fecha.getMonth(),
-            año = fecha.getFullYear();
+        var newDate = new Date(fecha);
+        
+        var dia = newDate.getDate(),
+            mes = newDate.getMonth(),
+            año = newDate.getFullYear();
         
 		return dia + ' de ' + app.ut.meses[mes] + ' del ' + año;
 	});
