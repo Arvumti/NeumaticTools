@@ -16,7 +16,8 @@
 /*global-reset()*/
 
 /*------------------------- 0.2.-Variables --------------------*/
-main-color = #fa5b4d
+main-color = #4D2811 !important
+sub-main-color = #FAB852 !important
 
 /*------------------------- 0.3.-Funciones --------------------*/
 bcolor(t = 0.1, r = 59, g = 89, b = 152)
@@ -131,15 +132,31 @@ button.alert
 	top 0px
 	left 3px
 	color #99a1a7
+.reveal-modal
+    &.special
+        width auto
 .row.special
     max-width 90%
 small.error
     background-color #BF1C2D !important
 table
-    td.icons
-        padding 0 !important
-        text-align center
-        width 50px
+    tbody
+        td.icons
+            padding 0 !important
+            text-align center
+            width 50px
+    
+    tfoot
+        ul
+            display block
+            margin 0
+            text-align center
+    
+    thead
+        background-color #333
+        
+        td
+            color #EEE !important
     
     &.special
         width 100%

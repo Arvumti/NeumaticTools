@@ -32,6 +32,7 @@ html
     link(rel='stylesheet', type='text/css', href='/css/typeahead.css')
     link(rel='stylesheet', type='text/css', href='/css/style.css')
 
+    script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='/js/jquery-2.0.3.min.js')
     script(type='text/javascript', src='/js/typeahead.js')
     script(type='text/javascript', src='/js/jquery.nicescroll.min.js')
@@ -42,6 +43,8 @@ html
     script(type='text/javascript', src='/js/mousetrap-bind-dictionary.min.js')
     script(type='text/javascript', src='/js/jquery.keyfilter.js')
     script(type='text/javascript', src='/js/handlebars.js')
+    script(type='text/javascript', src='/js/backbone.iosync.js')
+    script(type='text/javascript', src='/js/backbone.iobind.js')
     script(type='text/javascript', src='/js/cApp.js')
     
     script(id='tmp_cbo_familias', type='text/x-handlebars-template')
@@ -349,6 +352,7 @@ html
                 thead
                     tr
                         td &nbsp
+                            i(class='fa fa-cogs fa-inverse')
                         td Nombre
                         td RFC
                         td Telefono                        
@@ -410,6 +414,7 @@ html
                 thead
                     tr
                         td &nbsp
+                            i(class='fa fa-cogs fa-inverse')
                         td NE
                         td Nombre
                         td Días
@@ -480,6 +485,7 @@ html
                         thead
                             tr
                                 td &nbsp
+                                    i(class='fa fa-cogs fa-inverse')
                                 td Cliente
                                 td Folio
                                 td Fecha de inicio
@@ -504,11 +510,42 @@ html
                         thead
                             tr
                                 td &nbsp
+                                    i(class='fa fa-cogs fa-inverse')
                                 td Cliente
                                 td Folio
                                 td Fecha de inicio
                                 td Fecha de final
                         tbody &nbsp
+                        tfoot
+                            tr
+                                td(colspan='5')
+                                    ul.pagination
+                                        li.arrow
+                                            a(href='') &laquo;
+                                        li.current
+                                            a(href='') 1
+                                        li
+                                            a(href='') 2
+                                        li
+                                            a(href='') 3
+                                        li
+                                            a(href='') 4
+                                        li
+                                            a(href='') 5
+                                        li
+                                            a(href='') 6
+                                        li
+                                            a(href='') 7
+                                        li
+                                            a(href='') 8
+                                        li
+                                            a(href='') 9
+                                        li
+                                            a(href='') 10
+                                        li
+                                            a(href='') &hellip;
+                                        li.arrow
+                                            a(href='') &raquo;
          
         section(class='reveal-modal' data-reveal)#popContratoEntrega
             section.modal-header
@@ -544,7 +581,7 @@ html
     br
     
     div#print-area.rp-contrato &nbsp
-    div(class='reveal-modal' data-reveal)#popImprimir
+    div(class='reveal-modal special' data-reveal)#popImprimir
         section.modal-header
             h3.modal-title Imprimir
         section#modal-body

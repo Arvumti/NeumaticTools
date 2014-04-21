@@ -14,7 +14,8 @@ var express = require('express'),
     autoIncrement = require('mongoose-auto-increment'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
-	_ = require('lodash');
+	_ = require('lodash'),
+    http = require('http');
 
 var app = express();
 
@@ -32,8 +33,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(app.router);
 
-var server = require('http').Server(app)//,
-	//io = require('socket.io').listen(server);
+var server = http.createServer(app),
+    io = require('socket.io').listen(server);
 server.listen(process.env.PORT || 3000);
 
 /* ------------------------------- 2.-Rutas ------------------------------- */
@@ -455,7 +456,296 @@ db.once('open', function callback(){
 });
 
 /* ------------------------------- 4.-SockeIO ------------------------------- */
-
+io.sockets.on('connection', function (socket) {
+    
+    var equipos = {
+        create: function(data, callback) {
+            console.log('save equipo');
+            console.log(data);
+            
+            data.idFamilia = data.idFamilia._id;
+            
+            var equipo = new mongo.equipos(data);
+            equipo.save(function (err, document){
+                console.log('---------------------------save equipo mongo----------------------------');
+                
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(document);
+                    //socket.emit('equipos:create', document);
+                    //socket.broadcast.emit('equipos:create', document);
+                    callback(null, {_id: document._id});
+                }
+            });
+        },
+        drop: function(data, callback) {
+            console.log('delete equipo');
+            console.log(data);
+            
+            mongo.equipos.findByIdAndRemove(data._id, function(err, document) {
+                console.log('----------------------------delete equipo mongo----------------------------------');
+                console.log(document);
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    //socket.emit('equipo/' + data._id + ':delete', data);
+                    //socket.broadcast.emit('equipo/' + data._id + ':delete', data);
+                    callback(null, data});
+                }
+            });
+        },
+        read: function (data, callback){
+            console.log('fetch equipos');
+            //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            mongo.equipos.find({ activo:true }).populate('idFamilia', {nombre:1}).exec(function (err, documents) {
+                console.log('----------------------------fetch equipos mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(documents);
+                    callback(null, documents);
+                }
+            });
+        },
+        update: function(data, callback) {
+            console.log('update equipo');
+            console.log(data);
+            
+            var id = data._id.toString();    
+            json = data;
+            delete json._id;
+            
+            json.idFamilia = json.idFamilia._id; 
+            
+            console.log(id);
+            mongo.equipos.update({_id:id}, json, {multi:false}, function(err) {
+                console.log('----------------------------update equipo mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    //socket.emit('todo/' + id + ':update', json);
+                    //socket.broadcast.emit('todo/' + id + ':update', json);
+                    callback(null, {});
+                }
+            });
+        }
+    },
+    clientes = {
+        create: function(data, callback) {
+            console.log('save cliente');
+            console.log(data);
+                
+            var cliente = new mongo.clientes(data);
+            cliente.save(function (err, document){
+                console.log('----------------------------save cliente mongo----------------------------------');
+                
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(document);
+                    //socket.emit('clientes:create', document);
+                    //socket.broadcast.emit('clientes:create', document);
+                    callback(null, {_id: document._id});
+                }
+            });
+        },
+        drop: function(data, callback) {
+            console.log('delete cliente');
+            console.log(data);
+            
+            mongo.clientes.findByIdAndRemove(data._id, function(err, document) {
+                console.log('----------------------------delete cliente mongo----------------------------------');
+                console.log(document);
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    socket.emit('cliente/' + data._id + ':delete', data);
+                    socket.broadcast.emit('cliente/' + data._id + ':delete', data);
+                    callback(null, data);
+                }
+            });
+        },
+        read: function (data, callback){
+            console.log('fetch clientes');
+            //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            mongo.clientes.find({ activo:true }, function (err, documents) {
+                console.log('----------------------------fetch clientes mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(documents);
+                    callback(null, documents);
+                }
+            });
+        },
+        update: function(data, callback) {
+            console.log('update cliente');
+            console.log(data);
+            
+            var id = data._id.toString();    
+            json = data;
+            delete json._id;
+            
+            console.log(id);
+            mongo.clientes.update({_id:id}, json, {multi:false}, function(err) {
+                console.log('----------------------------update cliente mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    //socket.emit('cliente/' + id + ':update', json);
+                    //socket.broadcast.emit('cliente/' + id + ':update', json);
+                    callback(null, {});
+                }
+            });
+        }
+    },
+    contratos = {
+        read: function (data, callback){
+            console.log('fetch contratos');
+            //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            mongo.contratos
+                    .find({ activo:true, feEntrega:null })
+                    .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
+                    .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+                    .exec(function (err, documents) {
+                        console.log('----------------------------fetch contratos mongo----------------------------------');
+                        if(err) {
+                            console.log('Error:'+err);
+                            callback(null, {err:err});
+                        }
+                        else {
+                            console.log(documents);
+                            callback(null, documents);
+                        }
+                    });
+        },
+        create: function(data, callback) {
+            console.log('save contratos');
+            console.log(data);
+            var json = data;
+            
+            json.folio = 0;
+            if(json.cliente)
+                json.cliente = json.cliente._id;
+            if(json.equipo)
+                json.equipo = json.equipo._id;
+            
+            delete json.folio;
+            var contrato = new mongo.contratos(json);
+            contrato.save(function (err, document){
+                console.log('----------------------------save contratos mongo----------------------------------');
+                
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(document);
+                    //socket.emit('contratos:create', document);
+                    //socket.broadcast.emit('contratos:create', document);
+                    callback(null, {_id: document._id});
+                }
+            });
+        },
+        update: function(data, callback) {
+            console.log('update contrato');
+            console.log(data);
+            
+            var id = data._id.toString();    
+            json = data;
+            delete json._id;    
+            if(json.cliente)
+                json.cliente = json.cliente._id;
+            if(json.equipo)
+                json.equipo = json.equipo._id;
+            
+            console.log(id);    
+            mongo.contratos.update({_id:id}, json, {multi:false}, function(err) {
+                console.log('----------------------------update contrato mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    res.send('Error:'+err, 410);
+                }
+                else {
+                    //{ $inc: { views: 1 }}
+                    mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta } }, function (err) {
+                        if(err) {
+                            console.log('Error:'+err);
+                            callback(null, {err:err});
+                        }
+                        else {
+                            //socket.emit('contrato/' + id + ':update', json);
+                            //socket.broadcast.emit('contrato/' + id + ':update', json);
+                            callback(null, {});
+                        }
+                    });
+                }
+            });
+        }
+    },
+    contratosHist = {
+        read: function (data, callback){
+            console.log('fetch contratos');
+            //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            mongo.contratos
+                    .find({ activo:true, feEntrega:{$ne:null} })
+                    .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
+                    .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+                    .exec(function (err, documents) {
+                        console.log('----------------------------fetch contratos mongo----------------------------------');
+                        if(err) {
+                            console.log('Error:'+err);
+                            callback(null, {err:err});
+                        }
+                        else {
+                            console.log(documents);
+                            callback(null, documents);
+                        }
+                    });
+        }
+    };
+    // create: called when we .save() our new todo
+    // drop: called when we .destroy() our model
+    // read: called when we .fetch() our collection
+    // update: called when we .save() our model    
+    
+    socket.on('equipo:create', equipos.create);
+    socket.on('equipo:delete', equipos.drop);
+    socket.on('equipos:read', equipos.read);
+    socket.on('equipo:update', equipos.update);    
+    
+    socket.on('cliente:create', clientes.create);
+    socket.on('cliente:delete', clientes.drop);
+    socket.on('clientes:read', clientes.read);
+    socket.on('cliente:update', clientes.update);
+    
+    socket.on('contrato:create', contratos.create);
+    socket.on('contratos:read', contratos.read);
+    socket.on('contrato:update', contratos.update);
+    
+    socket.on('contratosHist:read', contratosHist.read);
+});
 
 /* ------------------------------- 5.-Passport ------------------------------- */
 passport.serializeUser(function(user, done) {

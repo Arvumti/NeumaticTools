@@ -17,15 +17,102 @@ var app = {},
     repos = '';
 
 /* ----------------------------------------- 1.-Modelos ----------------------------------------- */
+app.Todo = Backbone.Model.extend({
+  urlRoot: 'todo',
+  noIoBind: false,
+  socket:app.socket,
+  initialize: function () {
+    _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+    
+    if (!this.noIoBind) {
+      this.ioBind('update', this.serverChange, this);
+      this.ioBind('delete', this.serverDelete, this);
+    }
+  },
+  serverChange: function (data) {
+    data.fromServer = true;
+    this.set(data);
+  },
+  serverDelete: function (data) {
+    if (this.collection) {
+      this.collection.remove(this);
+    } else {
+      this.trigger('remove', this);
+    }
+    this.modelCleanup();
+  },
+  modelCleanup: function () {
+    this.ioUnbindAll();
+    return this;
+  }
+});
+app.Todos = Backbone.Collection.extend({
+    model: app.Todo,
+    url: 'todos',
+    socket:app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
+});
+
+
+
 app.MoCliente = Backbone.Model.extend({
     idAttribute: '_id',
-    url: function() {
+    /*url: function() {
         var ruta = 'SaveCliente' + (this.id ? '/' + this.id : '');
         return ruta;
-    },
+    },*/
     defaults: {
         visible: 1,
         activo: true
+    },
+    urlRoot: 'cliente',
+    noIoBind: false,
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+        
+        if (!this.noIoBind) {
+            this.ioBind('update', this.serverChange, this);
+            this.ioBind('delete', this.serverDelete, this);
+        }
+    },
+    serverChange: function (data) {
+        data.fromServer = true;
+        this.set(data);
+    },
+    serverDelete: function (data) {
+        if (this.collection) {
+            this.collection.remove(this);
+        } 
+        else {
+            this.trigger('remove', this);
+        }
+        this.modelCleanup();
+    },
+    modelCleanup: function () {
+        this.ioUnbindAll();
+        return this;
     }
 });
 app.MoContrato = Backbone.Model.extend({
@@ -34,51 +121,194 @@ app.MoContrato = Backbone.Model.extend({
         Backbone.Model.apply(this, arguments);        
         if(this.get('feEntrega') != null)
             this.set('visible', false);
-    },*/
+    },
     url: function() {
         var ruta = 'SaveContrato' + (this.id ? '/' + this.id : '');
         return ruta;
-    },
+    },*/
     defaults: {
         visible: true,
         activo: true,
         feEntrega: null,
         diasRenta: 0
+    },
+    urlRoot: 'contrato',
+    noIoBind: false,
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+        
+        if (!this.noIoBind) {
+            this.ioBind('update', this.serverChange, this);
+            this.ioBind('delete', this.serverDelete, this);
+        }
+    },
+    serverChange: function (data) {
+        data.fromServer = true;
+        this.set(data);
+    },
+    serverDelete: function (data) {
+        if (this.collection) {
+            this.collection.remove(this);
+        } 
+        else {
+            this.trigger('remove', this);
+        }
+        this.modelCleanup();
+    },
+    modelCleanup: function () {
+        this.ioUnbindAll();
+        return this;
     }
 });
 app.MoEquipo = Backbone.Model.extend({
     idAttribute: '_id',
-    url: function() {
+    /*url: function() {
         var ruta = 'SaveEquipo' + (this.id ? '/' + this.id : '');
         return ruta;
-    },
+    },*/
     defaults: {
         visible: 1,
         activo: true
+    },
+    urlRoot: 'equipo',
+    noIoBind: false,
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+        
+        if (!this.noIoBind) {
+            this.ioBind('update', this.serverChange, this);
+            this.ioBind('delete', this.serverDelete, this);
+        }
+    },
+    serverChange: function (data) {
+        data.fromServer = true;
+        this.set(data);
+    },
+    serverDelete: function (data) {
+        if (this.collection) {
+            this.collection.remove(this);
+        } 
+        else {
+            this.trigger('remove', this);
+        }
+        this.modelCleanup();
+    },
+    modelCleanup: function () {
+        this.ioUnbindAll();
+        return this;
     }
 });
 /* ----------------------------------------- 2.-Colecciones ----------------------------------------- */
 window.CoClientesList = Backbone.Collection.extend({
     model: app.MoCliente,
-    url: 'GetClientes'
+    url: 'clientes',
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
 });
 window.CoContratosList = Backbone.Collection.extend({
     model: app.MoContrato,
-    url: 'GetContratos'
+    url: 'contratos',
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
 });
 window.CoContratosHistList = Backbone.Collection.extend({
     model: app.MoContrato,
-    url: 'GetContratosHist'
+    url: 'contratosHist',
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
 });
 window.CoEquiposList = Backbone.Collection.extend({
     model: app.MoEquipo,
-    url: 'GetEquipos'
+    url: 'equipos',
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
 });
-
-app.CoClientes = new window.CoClientesList();
-app.CoContratos = new window.CoContratosList();
-app.CoContratosHist = new window.CoContratosHistList();
-app.CoEquipos = new window.CoEquiposList();
 /* ----------------------------------------- 3.-Vistas ----------------------------------------- */
 app.vwMain = Backbone.View.extend({
     el: 'body',
@@ -407,8 +637,13 @@ app.ViContrato = Backbone.View.extend({
     save: function() {
         var json = new app.MoContrato(this.getData()).toJSON();
         
-        app.CoContratos.create(json, {error:error, wait:true});
+        app.CoContratos.create(json, {error:error, success:done, wait:true});
         this.clear();
+        
+        function done(model) {
+            var template = app.templates.rp_contratos(model.toJSON());
+            app.ut.print({body:template, class:'rp-contrato'});
+        }
         
         function error(data, xrh) {
             console.log(data);
@@ -678,7 +913,7 @@ app.ViEquipo = Backbone.View.extend({
         switch(this.crud) {
             case 1:
                 app.CoEquipos.create(json, {error:error, wait:true});
-                this.clear();
+                //this.clear();
                 break;
             case 2:
                 this.fakeModel.save(json);
@@ -873,6 +1108,14 @@ function inicio(){
 		}
 	});
     
+    window.socket = io.connect('http://localhost:3000');
+    app.socket = window.socket;
+    
+    app.CoClientes = new window.CoClientesList();
+    app.CoContratos = new window.CoContratosList();
+    app.CoContratosHist = new window.CoContratosHistList();
+    app.CoEquipos = new window.CoEquiposList();
+    
     new app.router;
 	app.ut = new utilerias();
     app.templates = new templates();
@@ -890,14 +1133,7 @@ function inicio(){
         Equipos: new app.ViEquipos()
 	};
     
-	/*app.keytrap = new keytrap();
-	app.ns = new nombreSockets();
-	app.pag = new paginacion();
-	app.templates = new templates();
-	app.socket = io.connect('http://localhost:3000');
-	app.socket.on(app.ns.agSearchDatos, agSearchDatos);
-	app.socket.on(app.ns.cvSave, saveVenta);
-	app.socket.on(app.ns.GetArticulo, addArticulo);*/
+	/*app.keytrap = new keytrap();*/    
     
     app.CoEquipos.fetch();
     app.CoClientes.fetch();
@@ -906,7 +1142,6 @@ function inicio(){
     Backbone.history.start({
         root: '/'
     });
-    
     //window.print();
 }
 
