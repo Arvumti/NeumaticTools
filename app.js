@@ -81,7 +81,6 @@ app.get('/GetFamilias', function(req, res) {
     });
     
 });
-
 app.get('/GetEquiposBySearch', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch equipos');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
@@ -106,80 +105,6 @@ app.get('/GetEquiposBySearch', /*ensureAuthenticated,*/ function (req, res){
         }
     });
 });
-app.get('/GetEquipos', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch equipos');
-    //res.writeHead(200, { 'Content-Type': 'application/json'});
-    
-    mongo.equipos.find({ activo:true }).populate('idFamilia', {nombre:1}).exec(function (err, documents) {
-        console.log('----------------------------fetch equipos mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(documents);
-            res.json(documents);
-        }
-    });
-});
-app.post('/SaveEquipo', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('save equipo');
-    console.log(req.body);
-    
-    if(req.body.idFamilia)
-        req.body.idFamilia = req.body.idFamilia._id;
-    
-    var equipo = new mongo.equipos(req.body);
-    equipo.save(function (err, document){
-        console.log('----------------------------save equipo mongo----------------------------------');
-        
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(document);
-            res.json({_id:document._id});
-        }
-    });
-});
-app.put('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update equipo');
-    console.log(req.body);
-    
-    var id = req.body._id.toString();    
-    json = req.body;
-    delete json._id;
-    
-    json.idFamilia = json.idFamilia._id; 
-    
-    console.log(id);
-    mongo.equipos.update({_id:id}, json, {multi:false}, function(err) {
-        console.log('----------------------------update equipo mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else
-            res.send();
-    });
-});
-app.delete('/SaveEquipo/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('delete equipo');
-    console.log(req.params.id);
-    
-    mongo.equipos.findByIdAndRemove(req.params.id, function(err, document) {
-        console.log('----------------------------delete equipo mongo----------------------------------');
-        console.log(document);
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else
-            res.json({ok:1});
-    });
-});
-
 app.get('/GetClientesBySearch', /*ensureAuthenticated,*/ function (req, res){
     console.log('fetch clientes');
     //res.writeHead(200, { 'Content-Type': 'application/json'});
@@ -202,173 +127,6 @@ app.get('/GetClientesBySearch', /*ensureAuthenticated,*/ function (req, res){
         else {
             console.log(documents);
             res.json(documents);
-        }
-    });
-});
-app.get('/GetClientes', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch clientes');
-    //res.writeHead(200, { 'Content-Type': 'application/json'});
-    
-    mongo.clientes.find({ activo:true }, function (err, documents) {
-        console.log('----------------------------fetch clientes mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(documents);
-            res.json(documents);
-        }
-    });
-});
-app.post('/SaveCliente', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('save cliente');
-    console.log(req.body);
-        
-    var cliente = new mongo.clientes(req.body);
-    cliente.save(function (err, document){
-        console.log('----------------------------save cliente mongo----------------------------------');
-        
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(document);
-            res.json({_id:document._id});
-        }
-    });
-});
-app.put('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update cliente');
-    console.log(req.body);
-    
-    var id = req.body._id.toString();    
-    json = req.body;
-    delete json._id;
-    
-    console.log(id);
-    mongo.clientes.update({_id:id}, json, {multi:false}, function(err) {
-        console.log('----------------------------update cliente mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else
-            res.send();
-    });
-});
-app.delete('/SaveCliente/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('delete cliente');
-    console.log(req.params.id);
-    
-    mongo.clientes.findByIdAndRemove(req.params.id, function(err, document) {
-        console.log('----------------------------delete cliente mongo----------------------------------');
-        console.log(document);
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else
-            res.json({ok:1});
-    });
-});
-
-app.get('/GetContratos', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch contratos');
-    //res.writeHead(200, { 'Content-Type': 'application/json'});
-    
-    mongo.contratos
-            .find({ activo:true, feEntrega:null })
-            .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
-            .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
-            .exec(function (err, documents) {
-                console.log('----------------------------fetch contratos mongo----------------------------------');
-                if(err) {
-                    console.log('Error:'+err);
-                    res.send('Error:'+err, 410);
-                }
-                else {
-                    console.log(documents);
-                    res.json(documents);
-                }
-            });
-});
-app.get('/GetContratosHist', /*ensureAuthenticated,*/ function (req, res){
-    console.log('fetch contratos');
-    //res.writeHead(200, { 'Content-Type': 'application/json'});
-    
-    mongo.contratos
-            .find({ activo:true, feEntrega:{$ne:null} })
-            .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
-            .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
-            .exec(function (err, documents) {
-                console.log('----------------------------fetch contratos mongo----------------------------------');
-                if(err) {
-                    console.log('Error:'+err);
-                    res.send('Error:'+err, 410);
-                }
-                else {
-                    console.log(documents);
-                    res.json(documents);
-                }
-            });
-});
-app.post('/SaveContrato', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('save contratos');
-    console.log(req.body);
-    var json = req.body;
-    
-    json.folio = 0;
-    if(json.cliente)
-        json.cliente = json.cliente._id;
-    if(json.equipo)
-        json.equipo = json.equipo._id;
-    
-    delete json.folio;
-    var contrato = new mongo.contratos(json);
-    contrato.save(function (err, document){
-        console.log('----------------------------save contratos mongo----------------------------------');
-        
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            console.log(document);
-            res.json({_id:document._id, folio:document.folio});            
-        }
-    });
-});
-app.put('/SaveContrato/:id', /*ensureAuthenticated,*/ function(req, res) {
-    console.log('update contrato');
-    console.log(req.body);
-    
-    var id = req.body._id.toString();    
-    json = req.body;
-    delete json._id;    
-    if(json.cliente)
-        json.cliente = json.cliente._id;
-    if(json.equipo)
-        json.equipo = json.equipo._id;
-    
-    console.log(id);    
-    mongo.contratos.update({_id:id}, json, {multi:false}, function(err) {
-        console.log('----------------------------update contrato mongo----------------------------------');
-        if(err) {
-            console.log('Error:'+err);
-            res.send('Error:'+err, 410);
-        }
-        else {
-            //{ $inc: { views: 1 }}
-            mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta } }, function (err) {
-                if(err) {
-                    console.log('Error:'+err);
-                    res.send('Error:'+err, 410);
-                }
-                else                
-                    res.send();
-            });
         }
     });
 });
@@ -495,7 +253,7 @@ io.sockets.on('connection', function (socket) {
                 else {
                     //socket.emit('equipo/' + data._id + ':delete', data);
                     //socket.broadcast.emit('equipo/' + data._id + ':delete', data);
-                    callback(null, data});
+                    callback(null, data);
                 }
             });
         },
@@ -621,12 +379,25 @@ io.sockets.on('connection', function (socket) {
     contratos = {
         read: function (data, callback){
             console.log('fetch contratos');
+            console.log('--------------------- Data:');
+            console.log(data);
+            console.log('--------------------- END Data');
             //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            var curr = data.curr,
+                base = 0,
+                limit = 100,
+                page = 10,
+                ini = (curr-1) * page,
+                fin = curr * page
+                ;
             
             mongo.contratos
                     .find({ activo:true, feEntrega:null })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
                     .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+                    .skip(base)
+                    .limit(limit)
                     .exec(function (err, documents) {
                         console.log('----------------------------fetch contratos mongo----------------------------------');
                         if(err) {
@@ -634,8 +405,21 @@ io.sockets.on('connection', function (socket) {
                             callback(null, {err:err});
                         }
                         else {
-                            console.log(documents);
-                            callback(null, documents);
+                            var docs = [],
+                                count = 0,
+                                iterator = ini + count;
+                            console.log('ite: ' + iterator + ' base: ' + base + ' lmiit: ' + limit);
+                            console.log(documents[0]);
+                            while(count < page && iterator <= documents.length) {
+                                console.log(documents[iterator].folio);
+                                docs.push(documents[iterator]);
+                                count++;
+                                iterator = ini + count;
+                            }
+                            
+                            console.log('Longitud: ' + docs.length);
+                            //console.log(docs);
+                            callback(null, docs);
                         }
                     });
         },
@@ -730,7 +514,7 @@ io.sockets.on('connection', function (socket) {
     // read: called when we .fetch() our collection
     // update: called when we .save() our model    
     
-    socket.on('equipo:create', equipos.create);
+    /*socket.on('equipo:create', equipos.create);
     socket.on('equipo:delete', equipos.drop);
     socket.on('equipos:read', equipos.read);
     socket.on('equipo:update', equipos.update);    
@@ -738,13 +522,13 @@ io.sockets.on('connection', function (socket) {
     socket.on('cliente:create', clientes.create);
     socket.on('cliente:delete', clientes.drop);
     socket.on('clientes:read', clientes.read);
-    socket.on('cliente:update', clientes.update);
+    socket.on('cliente:update', clientes.update);*/
     
     socket.on('contrato:create', contratos.create);
     socket.on('contratos:read', contratos.read);
     socket.on('contrato:update', contratos.update);
     
-    socket.on('contratosHist:read', contratosHist.read);
+    //socket.on('contratosHist:read', contratosHist.read);
 });
 
 /* ------------------------------- 5.-Passport ------------------------------- */

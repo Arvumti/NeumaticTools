@@ -17,65 +17,6 @@ var app = {},
     repos = '';
 
 /* ----------------------------------------- 1.-Modelos ----------------------------------------- */
-app.Todo = Backbone.Model.extend({
-  urlRoot: 'todo',
-  noIoBind: false,
-  socket:app.socket,
-  initialize: function () {
-    _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
-    
-    if (!this.noIoBind) {
-      this.ioBind('update', this.serverChange, this);
-      this.ioBind('delete', this.serverDelete, this);
-    }
-  },
-  serverChange: function (data) {
-    data.fromServer = true;
-    this.set(data);
-  },
-  serverDelete: function (data) {
-    if (this.collection) {
-      this.collection.remove(this);
-    } else {
-      this.trigger('remove', this);
-    }
-    this.modelCleanup();
-  },
-  modelCleanup: function () {
-    this.ioUnbindAll();
-    return this;
-  }
-});
-app.Todos = Backbone.Collection.extend({
-    model: app.Todo,
-    url: 'todos',
-    socket:app.socket,
-    initialize: function () {
-        _.bindAll(this, 'serverCreate', 'collectionCleanup');
-        this.ioBind('create', this.serverCreate, this);
-    },
-    serverCreate: function (data) {
-        // make sure no duplicates, just in case
-        var exists = this.get(data.id);
-        if (!exists) {
-            this.add(data);
-        } 
-        else {
-            data.fromServer = true;
-            exists.set(data);
-        }
-    },
-    collectionCleanup: function (callback) {
-        this.ioUnbindAll();
-        this.each(function (model) {
-            model.modelCleanup();
-        });
-        return this;
-    }
-});
-
-
-
 app.MoCliente = Backbone.Model.extend({
     idAttribute: '_id',
     /*url: function() {
@@ -235,8 +176,17 @@ window.CoContratosList = Backbone.Collection.extend({
     initialize: function () {
         _.bindAll(this, 'serverCreate', 'collectionCleanup');
         this.ioBind('create', this.serverCreate, this);
+        
+        this.pagination = true;
+        this.search = {
+            data: {
+                curr: 1,
+            },
+            processData: true
+        };
     },
     serverCreate: function (data) {
+        debugger;
         // make sure no duplicates, just in case
         var exists = this.get(data.id);
         if (!exists) {
@@ -253,6 +203,22 @@ window.CoContratosList = Backbone.Collection.extend({
             model.modelCleanup();
         });
         return this;
+    },
+    /* -------------------- OVERRIDE ---------------- */
+    fetch: function(options) {
+        if(options)
+            this.search.data.curr = options.curr || 1;
+        console.log(this.search);
+        
+        while(this.models.length > 0) {
+            this.at(0).destroy();
+        }
+        
+        this.search.success = function(a, s, d, f, g) {
+            debugger;
+        }
+        
+        return Backbone.Collection.prototype.fetch.call(this, this.search);
     }
 });
 window.CoContratosHistList = Backbone.Collection.extend({
@@ -670,9 +636,12 @@ app.ViContrato = Backbone.View.extend({
 });
 app.ViContratos = Backbone.View.extend({
     el: '#pnlContratosConsulta',
-    events: {},
+    events: {
+        'click .pagination a': 'change_page'
+    },
     initialize: function() {
         this.txtBusqueda = this.$el.find('#txtBusqueda');
+        this.pagination =this.$el.find('.pagination');
         
         this.gvContratos = this.$el.find('table#gvContratos');        
         this.listenTo(app.CoContratos, 'add', this.addTR);
@@ -689,6 +658,18 @@ app.ViContratos = Backbone.View.extend({
         this.gvContratos.children('tbody').prepend(per.$el);
     },
     /*-------------------------- Eventos --------------------------*/
+    change_page: function(e) {
+        e.preventDefault();
+        this.pagination.find('li.current').removeClass('current');
+        $(e.currentTarget).parents('li').addClass('current');
+        
+        var curr = e.currentTarget.text.toInt(),
+            dir = null;
+        if(curr == 0)
+            dir = $(e.currentTarget).data('dir');
+        
+        app.CoContratos.fetch({curr:curr, dir:dir});
+    },
     keyup_txtBusqueda: function(search) {
         console.log('search: ' + search);
         
@@ -822,6 +803,7 @@ app.ViContratoTR = Backbone.View.extend({
     },
     initialize: function() {
         this.listenTo(this.model, 'change:visible', this.check_Visible);
+        this.listenTo(this.model, 'destroy', this.remove);
     },
     render: function(){
         var jData = this.model.toJSON();        
@@ -1133,8 +1115,7 @@ function inicio(){
         Equipos: new app.ViEquipos()
 	};
     
-	/*app.keytrap = new keytrap();*/    
-    
+	/*app.keytrap = new keytrap();*/
     app.CoEquipos.fetch();
     app.CoClientes.fetch();
     app.CoContratos.fetch();
