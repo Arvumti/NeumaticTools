@@ -379,24 +379,43 @@ io.sockets.on('connection', function (socket) {
     },
     contratos = {
         read: function (data, callback){
-            console.log('fetch contratos');
-            console.log('--------------------- Data:');
-            console.log(data);
-            console.log('--------------------- END Data');
+            console.log('');
+            console.log('');
+            console.log('===================================================');
+            console.log(data);            
             //res.writeHead(200, { 'Content-Type': 'application/json'});
             
-            var curr = data.curr,
+            /*
+            {
+                pags: 0,
+                cur: 0,
+                ant: 0,
+                sig: 0,
+                ini: 0,
+                fin: 0,
+                tot: 0,
+                repag: false,
+                reset: false,
+                init: true
+            }
+            */
+            
+            var curr = data.cur,
                 limit = 100,
                 page = 10,
-                base = Math.floor(((curr-1)*page)/limit)*limit,
-                paginate = data.paginate,
-                ini = (curr-1) * page,
-                fin = curr * page,
-                dir = data.dir,
-                lim = data.lim
+                base = Math.floor((curr-1)/page)*limit,
+                ant = data.ant
                 ;
             
-            console.log('base: ' + base + ' - limit: ' + limit);
+            if(data.init) {
+                base = 0;
+                curr = 1;
+            }
+            if(data.repag) {
+                ant = Math.floor((curr-1)/page)*page;//curr - 1;
+            }
+            
+            console.log('curr: ' + curr + ' limit: ' + limit + ' page: ' + page + ' base: ' + base + ' ant: ' + ant);
             mongo.contratos
                     .find({ activo:true, feEntrega:null })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
@@ -405,39 +424,50 @@ io.sockets.on('connection', function (socket) {
                     .skip(base)
                     .limit(limit + 1)
                     .exec(function (err, documents) {
-                        console.log('----------------------------fetch contratos mongo----------------------------------');
                         if(err) {
                             console.log('Error:'+err);
                             callback(null, {err:err});
                         }
                         else {
                             var docs = [],
-                                count = 0,
-                                iterator = ini + count;
-                            console.log('Longitud de documentos z:' + documents.length);
-                            if(documents.length > 0) {
-                                console.log('ite: ' + iterator + ' base: ' + base + ' lmiit: ' + limit);
-                                console.log(documents[0]);
-                                console.log('--- c: ' + count + ' p: ' + page + ' i: ' + iterator + ' ---');
-                                while(count < page && iterator < documents.length) {
-                                    console.log('c: ' + count + ' p: ' + page + ' i: ' + iterator);
-                                    console.log(documents[iterator].folio);
-                                    docs.push(documents[iterator]);
-                                    count++;
-                                    iterator = ini + count;
+                                iPu = (curr - ant - 1) * 10;
+                            
+                            console.log('------ iPu: ' + iPu + ' long: ' + documents.length + ' ---------');
+                            for(var i=iPu; i<iPu+10; i++) {
+                                console.log('iPu: ' + iPu + ' long: ' + documents.length + ' i: ' + i);
+                                if(i==documents.length)
+                                    break;
+                                if(documents[i]) {
+                                    console.log('---------------------------------');
+                                    console.log('hasFolio: ' + documents[i].folio);
+                                    console.log('---------------------------------');
                                 }
-                                
-                                var jRes = { 
-                                    curr: curr,
-                                    lim: documents.length, 
-                                    paginate: paginate,
-                                    ant: Math.floor(lim / 10)
-                                };
-                                
-                                console.log('Longitud: ' + docs.length);
-                                socket.emit('contratos:pag', jRes);
-                                //console.log(docs);
+                                else
+                                    console.log('---------------has No Folio----------------');
+                                docs.push(documents[i]);
                             }
+                            console.log('ceil: ' + (Math.ceil(documents.length/page) + ant));
+                            var pags = Math.ceil(documents.length/page),
+                                sig = documents.length - 100 > 0 ? pags + ant : 0;
+                            
+                            if(pags > 10)
+                                pags = 10;
+                            
+                            var jRes = {
+                                pags: pags,
+                                ini: ant,
+                                fin: pags + ant,
+                                ant: ant,
+                                sig: sig,
+                                cur: curr
+                            };
+                            console.log(jRes);
+                            if(data.repag)
+                                socket.emit('contratos:pag', jRes);
+                            
+                            console.log('===================================================');
+                            console.log('');
+                            console.log('');
                             callback(null, docs);
                         }
                     });

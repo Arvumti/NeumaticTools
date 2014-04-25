@@ -180,9 +180,16 @@ window.CoContratosList = Backbone.Collection.extend({
         this.pagination = true;
         this.search = {
             data: {
-                lim: 0,
-                curr: 1,
-                paginate: false                
+                pags: 0,
+                cur: 0,
+                ini: 0,
+                fin: 0,
+                ant: 0,
+                sig: 0,
+                tot: 0,
+                repag: false,
+                reset: false,
+                init: true
             },
             processData: true
         };
@@ -211,9 +218,10 @@ window.CoContratosList = Backbone.Collection.extend({
         var that = this;
         
         if(options)
-            this.search.data.curr = options.curr;
-        if(this.search.data.curr > Math.floor(this.search.data.lim / 10))
-            this.search.data.paginate = true;
+            this.search.data.cur = options.cur;
+        
+        if(this.search.data.cur == this.search.data.ant || this.search.data.cur == this.search.data.sig)
+            this.search.data.repag = true;
         console.log(this.search);
         
         while(this.models.length > 0) {
@@ -656,31 +664,29 @@ app.ViContratos = Backbone.View.extend({
         
         app.socket.on('contratos:pag', function (data) {
             console.log(data);
-            if(data.paginate) {
-                app.CoContratos.search.data.lim = data.lim;
-                app.CoContratos.search.data.paginate = false;
-                
-                var lenX = Math.ceil(data.lim / 10),
-                    ant = data.ant;
-                
-                that.pagination.html('');
-                that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="0">&laquo;</a></li>');
-                if(data.ant >= 10)
-                    that.pagination.append('<li><a href="" id="' + ant + '">&hellip;</a></li>');
-                debugger;
-                for(var i=ant; i<ant+10; i++) {
-                    if(i == lenX + ant)
-                        break;
-                    
-                    var clase = '';
-                    if(ant == i)
-                        clase = 'class="current"';
-                    that.pagination.append('<li ' + clase + '><a href="" id="'+(i+1)+'">'+(i+1)+'</a></li>');
-                }
-                if(data.lim > 100)
-                    that.pagination.append('<li><a href="" id="' + ( lenX+ant + 1 ) + '">&hellip;</a></li>');
-                that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="3">&raquo;</a></li>');
+            app.CoContratos.search.data.pags = data.pags;
+            app.CoContratos.search.data.ini = data.ini;
+            app.CoContratos.search.data.fin = data.fin;
+            app.CoContratos.search.data.ant = data.ant;
+            app.CoContratos.search.data.sig = data.sig;
+            
+            app.CoContratos.search.data.init = false;
+            app.CoContratos.search.data.repag = false;
+            debugger;
+            
+            that.pagination.html('');
+            that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="0">&laquo;</a></li>');
+            if(data.ant > 0)
+                that.pagination.append('<li><a href="" id="' + data.ant + '">&hellip;</a></li>');
+            for(var i=data.ini; i<data.fin; i++) {
+                var clase = '';
+                if(data.cur == i + 1)
+                    clase = 'class="current"';
+                that.pagination.append('<li ' + clase + '><a href="" id="'+ (i + 1) +'">'+ (i + 1) +'</a></li>');
             }
+            if(data.sig > 0)
+                that.pagination.append('<li><a href="" id="' + data.sig + '" data-reset="true">&hellip;</a></li>');
+            that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="3">&raquo;</a></li>');
         });
     },
     render: function(){
@@ -693,12 +699,12 @@ app.ViContratos = Backbone.View.extend({
     /*-------------------------- Eventos --------------------------*/
     change_page: function(e) {
         e.preventDefault();
-        debugger;
         this.pagination.find('li.current').removeClass('current');
         $(e.currentTarget).parents('li').addClass('current');
         
         var json = {
-                curr: e.currentTarget.id.toInt()
+                cur: e.currentTarget.id.toInt(),
+                reset: $(e.currentTarget).data('reset')
             };
         
         app.CoContratos.fetch(json);
