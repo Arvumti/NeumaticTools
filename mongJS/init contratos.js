@@ -1,8 +1,8 @@
-db.contratos.remove().count();
-db.contratos.find().sort({folio:1});
+db.contratos.remove();
+db.contratos.find().sort({folio:1});
 db.contratos.find().count()
 
-for(var i=1; i<101; i++) {
+for(var i=1; i<102; i++) {
     db.contratos.insert({
         "folio" : i,
         "feIni" : ISODate("2014-04-15T17:49:51.463Z"),

@@ -660,34 +660,25 @@ app.ViContratos = Backbone.View.extend({
                 app.CoContratos.search.data.lim = data.lim;
                 app.CoContratos.search.data.paginate = false;
                 
-                var lim = data.lim,
+                var lenX = Math.ceil(data.lim / 10),
                     ant = data.ant;
-                
-                var pags = ant + Math.ceil(lim / 10),
-                    sob = lim % 10;
-                
-                if(pags < 10 && sob > 0)
-                    pags++;
                 
                 that.pagination.html('');
                 that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="0">&laquo;</a></li>');
-                if(data.curr > 10)
+                if(data.ant >= 10)
                     that.pagination.append('<li><a href="" id="' + ant + '">&hellip;</a></li>');
-                //debugger;
-                var count = 0;
-                for(var i=ant+1; i<pags+1; i++) {
-                    
-                    if(count == 10)
+                debugger;
+                for(var i=ant; i<ant+10; i++) {
+                    if(i == lenX + ant)
                         break;
-                    count++;
                     
                     var clase = '';
-                    if(data.curr == i)
+                    if(ant == i)
                         clase = 'class="current"';
-                    that.pagination.append('<li ' + clase + '><a href="" id="'+i+'">'+i+'</a></li>');
+                    that.pagination.append('<li ' + clase + '><a href="" id="'+(i+1)+'">'+(i+1)+'</a></li>');
                 }
-                if(pags > 10)
-                    that.pagination.append('<li><a href="" id="' + ( pags + 1 ) + '">&hellip;</a></li>');
+                if(data.lim > 100)
+                    that.pagination.append('<li><a href="" id="' + ( lenX+ant + 1 ) + '">&hellip;</a></li>');
                 that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="3">&raquo;</a></li>');
             }
         });
@@ -702,6 +693,7 @@ app.ViContratos = Backbone.View.extend({
     /*-------------------------- Eventos --------------------------*/
     change_page: function(e) {
         e.preventDefault();
+        debugger;
         this.pagination.find('li.current').removeClass('current');
         $(e.currentTarget).parents('li').addClass('current');
         

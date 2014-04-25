@@ -211,6 +211,7 @@ db.once('open', function callback(){
     mongo.equipos = mongoose.model('equipos', ScEquipos);
     mongo.familias = mongoose.model('familias', ScFamilias);
 	mongo.contratos = mongoose.model('contratos', ScContratos);
+    
 });
 
 /* ------------------------------- 4.-SockeIO ------------------------------- */
@@ -389,14 +390,13 @@ io.sockets.on('connection', function (socket) {
                 page = 10,
                 base = Math.floor(((curr-1)*page)/limit)*limit,
                 paginate = data.paginate,
-                ini = paginate ? 0 : (curr-1) * page,
+                ini = (curr-1) * page,
                 fin = curr * page,
                 dir = data.dir,
                 lim = data.lim
                 ;
             
-            console.log('base: ' + base);
-            console.log('limit: ' + limit);
+            console.log('base: ' + base + ' - limit: ' + limit);
             mongo.contratos
                     .find({ activo:true, feEntrega:null })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
