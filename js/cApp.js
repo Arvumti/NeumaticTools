@@ -176,23 +176,6 @@ window.CoContratosList = Backbone.Collection.extend({
     initialize: function () {
         _.bindAll(this, 'serverCreate', 'collectionCleanup');
         this.ioBind('create', this.serverCreate, this);
-        
-        this.pagination = true;
-        this.search = {
-            data: {
-                pags: 0,
-                cur: 0,
-                ini: 0,
-                fin: 0,
-                ant: 0,
-                sig: 0,
-                tot: 0,
-                repag: false,
-                reset: false,
-                init: true
-            },
-            processData: true
-        };
     },
     serverCreate: function (data) {
         debugger;
@@ -214,20 +197,7 @@ window.CoContratosList = Backbone.Collection.extend({
         return this;
     },
     /* -------------------- OVERRIDE ---------------- */
-    fetch: function(options) {
-        var that = this;
-        
-        if(options)
-            this.search.data.cur = options.cur;
-        
-        if(this.search.data.cur == this.search.data.ant || this.search.data.cur == this.search.data.sig)
-            this.search.data.repag = true;
-        console.log(this.search);
-        
-        while(this.models.length > 0) {
-            this.at(0).destroy();
-        }
-        
+    fetch: function(options) {        
         return Backbone.Collection.prototype.fetch.call(this, this.search);
     }
 });
@@ -661,33 +631,6 @@ app.ViContratos = Backbone.View.extend({
         this.call = null;
         
         app.ut.search({elem:this.txtBusqueda, done: this.keyup_txtBusqueda});
-        
-        app.socket.on('contratos:pag', function (data) {
-            console.log(data);
-            app.CoContratos.search.data.pags = data.pags;
-            app.CoContratos.search.data.ini = data.ini;
-            app.CoContratos.search.data.fin = data.fin;
-            app.CoContratos.search.data.ant = data.ant;
-            app.CoContratos.search.data.sig = data.sig;
-            
-            app.CoContratos.search.data.init = false;
-            app.CoContratos.search.data.repag = false;
-            debugger;
-            
-            that.pagination.html('');
-            that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="0">&laquo;</a></li>');
-            if(data.ant > 0)
-                that.pagination.append('<li><a href="" id="' + data.ant + '">&hellip;</a></li>');
-            for(var i=data.ini; i<data.fin; i++) {
-                var clase = '';
-                if(data.cur == i + 1)
-                    clase = 'class="current"';
-                that.pagination.append('<li ' + clase + '><a href="" id="'+ (i + 1) +'">'+ (i + 1) +'</a></li>');
-            }
-            if(data.sig > 0)
-                that.pagination.append('<li><a href="" id="' + data.sig + '" data-reset="true">&hellip;</a></li>');
-            that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="3">&raquo;</a></li>');
-        });
     },
     render: function(){
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
@@ -697,18 +640,6 @@ app.ViContratos = Backbone.View.extend({
         this.gvContratos.children('tbody').prepend(per.$el);
     },
     /*-------------------------- Eventos --------------------------*/
-    change_page: function(e) {
-        e.preventDefault();
-        this.pagination.find('li.current').removeClass('current');
-        $(e.currentTarget).parents('li').addClass('current');
-        
-        var json = {
-                cur: e.currentTarget.id.toInt(),
-                reset: $(e.currentTarget).data('reset')
-            };
-        
-        app.CoContratos.fetch(json);
-    },
     keyup_txtBusqueda: function(search) {
         console.log('search: ' + search);
         

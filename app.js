@@ -385,91 +385,17 @@ io.sockets.on('connection', function (socket) {
             console.log(data);            
             //res.writeHead(200, { 'Content-Type': 'application/json'});
             
-            /*
-            {
-                pags: 0,
-                cur: 0,
-                ant: 0,
-                sig: 0,
-                ini: 0,
-                fin: 0,
-                tot: 0,
-                repag: false,
-                reset: false,
-                init: true
-            }
-            */
-            
-            var curr = data.cur,
-                limit = 100,
-                page = 10,
-                base = Math.floor((curr-1)/page)*limit,
-                ant = data.ant
-                ;
-            
-            if(data.init) {
-                base = 0;
-                curr = 1;
-            }
-            if(data.repag) {
-                ant = Math.floor((curr-1)/page)*page;//curr - 1;
-            }
-            
-            console.log('curr: ' + curr + ' limit: ' + limit + ' page: ' + page + ' base: ' + base + ' ant: ' + ant);
             mongo.contratos
                     .find({ activo:true, feEntrega:null })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
                     .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
-                    .sort({folio:1})
-                    .skip(base)
-                    .limit(limit + 1)
                     .exec(function (err, documents) {
                         if(err) {
                             console.log('Error:'+err);
                             callback(null, {err:err});
                         }
-                        else {
-                            var docs = [],
-                                iPu = (curr - ant - 1) * 10;
-                            
-                            console.log('------ iPu: ' + iPu + ' long: ' + documents.length + ' ---------');
-                            for(var i=iPu; i<iPu+10; i++) {
-                                console.log('iPu: ' + iPu + ' long: ' + documents.length + ' i: ' + i);
-                                if(i==documents.length)
-                                    break;
-                                if(documents[i]) {
-                                    console.log('---------------------------------');
-                                    console.log('hasFolio: ' + documents[i].folio);
-                                    console.log('---------------------------------');
-                                }
-                                else
-                                    console.log('---------------has No Folio----------------');
-                                docs.push(documents[i]);
-                            }
-                            console.log('ceil: ' + (Math.ceil(documents.length/page) + ant));
-                            var pags = Math.ceil(documents.length/page),
-                                sig = documents.length - 100 > 0 ? pags + ant : 0;
-                            
-                            if(pags > 10)
-                                pags = 10;
-                            
-                            var jRes = {
-                                pags: pags,
-                                ini: ant,
-                                fin: pags + ant,
-                                ant: ant,
-                                sig: sig,
-                                cur: curr
-                            };
-                            console.log(jRes);
-                            if(data.repag)
-                                socket.emit('contratos:pag', jRes);
-                            
-                            console.log('===================================================');
-                            console.log('');
-                            console.log('');
-                            callback(null, docs);
-                        }
+                        else
+                            callback(null, documents);
                     });
         },
         create: function(data, callback) {
@@ -563,7 +489,7 @@ io.sockets.on('connection', function (socket) {
     // read: called when we .fetch() our collection
     // update: called when we .save() our model    
     
-    /*socket.on('equipo:create', equipos.create);
+    socket.on('equipo:create', equipos.create);
     socket.on('equipo:delete', equipos.drop);
     socket.on('equipos:read', equipos.read);
     socket.on('equipo:update', equipos.update);    
@@ -571,13 +497,13 @@ io.sockets.on('connection', function (socket) {
     socket.on('cliente:create', clientes.create);
     socket.on('cliente:delete', clientes.drop);
     socket.on('clientes:read', clientes.read);
-    socket.on('cliente:update', clientes.update);*/
+    socket.on('cliente:update', clientes.update);
     
     socket.on('contrato:create', contratos.create);
     socket.on('contratos:read', contratos.read);
     socket.on('contrato:update', contratos.update);
     
-    //socket.on('contratosHist:read', contratosHist.read);
+    socket.on('contratosHist:read', contratosHist.read);
 });
 
 /* ------------------------------- 5.-Passport ------------------------------- */
