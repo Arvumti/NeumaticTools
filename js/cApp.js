@@ -180,7 +180,9 @@ window.CoContratosList = Backbone.Collection.extend({
         this.pagination = true;
         this.search = {
             data: {
+                lim: 0,
                 curr: 1,
+                paginate: false                
             },
             processData: true
         };
@@ -206,16 +208,16 @@ window.CoContratosList = Backbone.Collection.extend({
     },
     /* -------------------- OVERRIDE ---------------- */
     fetch: function(options) {
+        var that = this;
+        
         if(options)
-            this.search.data.curr = options.curr || 1;
+            this.search.data.curr = options.curr;
+        if(this.search.data.curr > Math.floor(this.search.data.lim / 10))
+            this.search.data.paginate = true;
         console.log(this.search);
         
         while(this.models.length > 0) {
             this.at(0).destroy();
-        }
-        
-        this.search.success = function(a, s, d, f, g) {
-            debugger;
         }
         
         return Backbone.Collection.prototype.fetch.call(this, this.search);
@@ -640,6 +642,8 @@ app.ViContratos = Backbone.View.extend({
         'click .pagination a': 'change_page'
     },
     initialize: function() {
+        var that = this;
+        
         this.txtBusqueda = this.$el.find('#txtBusqueda');
         this.pagination =this.$el.find('.pagination');
         
@@ -649,6 +653,44 @@ app.ViContratos = Backbone.View.extend({
         this.call = null;
         
         app.ut.search({elem:this.txtBusqueda, done: this.keyup_txtBusqueda});
+        
+        app.socket.on('contratos:pag', function (data) {
+            console.log(data);
+            if(data.paginate) {
+                app.CoContratos.search.data.lim = data.lim;
+                app.CoContratos.search.data.paginate = false;
+                
+                var lim = data.lim,
+                    ant = data.ant;
+                
+                var pags = ant + Math.ceil(lim / 10),
+                    sob = lim % 10;
+                
+                if(pags < 10 && sob > 0)
+                    pags++;
+                
+                that.pagination.html('');
+                that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="0">&laquo;</a></li>');
+                if(data.curr > 10)
+                    that.pagination.append('<li><a href="" id="' + ant + '">&hellip;</a></li>');
+                //debugger;
+                var count = 0;
+                for(var i=ant+1; i<pags+1; i++) {
+                    
+                    if(count == 10)
+                        break;
+                    count++;
+                    
+                    var clase = '';
+                    if(data.curr == i)
+                        clase = 'class="current"';
+                    that.pagination.append('<li ' + clase + '><a href="" id="'+i+'">'+i+'</a></li>');
+                }
+                if(pags > 10)
+                    that.pagination.append('<li><a href="" id="' + ( pags + 1 ) + '">&hellip;</a></li>');
+                that.pagination.append('<li class="arrow"><a href="" id="0" data-dir="3">&raquo;</a></li>');
+            }
+        });
     },
     render: function(){
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
@@ -663,12 +705,11 @@ app.ViContratos = Backbone.View.extend({
         this.pagination.find('li.current').removeClass('current');
         $(e.currentTarget).parents('li').addClass('current');
         
-        var curr = e.currentTarget.text.toInt(),
-            dir = null;
-        if(curr == 0)
-            dir = $(e.currentTarget).data('dir');
+        var json = {
+                curr: e.currentTarget.id.toInt()
+            };
         
-        app.CoContratos.fetch({curr:curr, dir:dir});
+        app.CoContratos.fetch(json);
     },
     keyup_txtBusqueda: function(search) {
         console.log('search: ' + search);

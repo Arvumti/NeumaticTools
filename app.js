@@ -385,19 +385,25 @@ io.sockets.on('connection', function (socket) {
             //res.writeHead(200, { 'Content-Type': 'application/json'});
             
             var curr = data.curr,
-                base = 0,
                 limit = 100,
                 page = 10,
-                ini = (curr-1) * page,
-                fin = curr * page
+                base = Math.floor(((curr-1)*page)/limit)*limit,
+                paginate = data.paginate,
+                ini = paginate ? 0 : (curr-1) * page,
+                fin = curr * page,
+                dir = data.dir,
+                lim = data.lim
                 ;
             
+            console.log('base: ' + base);
+            console.log('limit: ' + limit);
             mongo.contratos
                     .find({ activo:true, feEntrega:null })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
                     .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+                    .sort({folio:1})
                     .skip(base)
-                    .limit(limit)
+                    .limit(limit + 1)
                     .exec(function (err, documents) {
                         console.log('----------------------------fetch contratos mongo----------------------------------');
                         if(err) {
@@ -408,17 +414,30 @@ io.sockets.on('connection', function (socket) {
                             var docs = [],
                                 count = 0,
                                 iterator = ini + count;
-                            console.log('ite: ' + iterator + ' base: ' + base + ' lmiit: ' + limit);
-                            console.log(documents[0]);
-                            while(count < page && iterator <= documents.length) {
-                                console.log(documents[iterator].folio);
-                                docs.push(documents[iterator]);
-                                count++;
-                                iterator = ini + count;
+                            console.log('Longitud de documentos z:' + documents.length);
+                            if(documents.length > 0) {
+                                console.log('ite: ' + iterator + ' base: ' + base + ' lmiit: ' + limit);
+                                console.log(documents[0]);
+                                console.log('--- c: ' + count + ' p: ' + page + ' i: ' + iterator + ' ---');
+                                while(count < page && iterator < documents.length) {
+                                    console.log('c: ' + count + ' p: ' + page + ' i: ' + iterator);
+                                    console.log(documents[iterator].folio);
+                                    docs.push(documents[iterator]);
+                                    count++;
+                                    iterator = ini + count;
+                                }
+                                
+                                var jRes = { 
+                                    curr: curr,
+                                    lim: documents.length, 
+                                    paginate: paginate,
+                                    ant: Math.floor(lim / 10)
+                                };
+                                
+                                console.log('Longitud: ' + docs.length);
+                                socket.emit('contratos:pag', jRes);
+                                //console.log(docs);
                             }
-                            
-                            console.log('Longitud: ' + docs.length);
-                            //console.log(docs);
                             callback(null, docs);
                         }
                     });
