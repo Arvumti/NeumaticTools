@@ -39,10 +39,11 @@ server.listen(process.env.PORT || 3000);
 
 /* ------------------------------- 2.-Rutas ------------------------------- */
 app.get('/', function (req, res){
-    if (req.isAuthenticated())
+    /*if (req.isAuthenticated())
         res.redirect('/main');
     
-    res.render('bsLogin', {title:'Control de visitas'});
+    res.render('bsLogin', {title:'Control de visitas'});*/
+    res.redirect('/main');
 });
 app.post('/', function(req, res) {
     function next() {
@@ -63,7 +64,7 @@ app.post('/', function(req, res) {
 });
 
 app.get('/main', /*ensureAuthenticated,*/ function (req, res){
-    res.render('bsMenu', {title:'Control de visitas', usuario:'tempo'});//, usuario:req.user.Usuario});
+    res.render('bsMenu', {title:"Neumatic's Tools", usuario:'tempo'});//, usuario:req.user.Usuario});
 });
 
 app.get('/GetFamilias', function(req, res) {
@@ -89,7 +90,8 @@ app.get('/GetEquiposBySearch', /*ensureAuthenticated,*/ function (req, res){
         limit = 10;
     
     mongo.equipos.find({ 
-        activo:true, 
+        activo:true,
+        rentado: false,
         $or: [
             { 'nombre':{ '$regex':search } },
             { sku:{ '$regex':search } }
@@ -170,6 +172,7 @@ db.once('open', function callback(){
             marca           : String,
             precioDia       : Number,
             diasTrabajados  : Number,
+            rentado         : Boolean,
             activo          : Boolean,
             idFamilia       : {
                                 type    : mongoose.Schema.Types.ObjectId, 
@@ -420,9 +423,18 @@ io.sockets.on('connection', function (socket) {
                 }
                 else {
                     console.log(document);
-                    //socket.emit('contratos:create', document);
-                    //socket.broadcast.emit('contratos:create', document);
-                    callback(null, {_id: document._id});
+                    var jContrato = {_id: document._id, folio:document.folio};
+                    mongo.equipos.findByIdAndUpdate(json.equipo, { rentado: true }, function (err) {
+                        if(err) {
+                            console.log('Error:'+err);
+                            callback(null, {err:err});
+                        }
+                        else {
+                            //socket.emit('contrato/' + id + ':update', json);
+                            //socket.broadcast.emit('contrato/' + id + ':update', json);
+                            callback(null, jContrato);
+                        }
+                    });
                 }
             });
         },
@@ -447,7 +459,7 @@ io.sockets.on('connection', function (socket) {
                 }
                 else {
                     //{ $inc: { views: 1 }}
-                    mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta } }, function (err) {
+                    mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta }, rentado:false }, function (err) {
                         if(err) {
                             console.log('Error:'+err);
                             callback(null, {err:err});

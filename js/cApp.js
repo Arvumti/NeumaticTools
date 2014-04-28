@@ -24,7 +24,7 @@ app.MoCliente = Backbone.Model.extend({
         return ruta;
     },*/
     defaults: {
-        visible: 1,
+        visible: true,
         activo: true
     },
     urlRoot: 'cliente',
@@ -109,7 +109,8 @@ app.MoEquipo = Backbone.Model.extend({
         return ruta;
     },*/
     defaults: {
-        visible: 1,
+        visible: true,
+        rentado: false,
         activo: true
     },
     urlRoot: 'equipo',
@@ -865,7 +866,7 @@ app.ViEquipo = Backbone.View.extend({
         switch(this.crud) {
             case 1:
                 app.CoEquipos.create(json, {error:error, wait:true});
-                //this.clear();
+                this.clear();
                 break;
             case 2:
                 this.fakeModel.save(json);
