@@ -142,6 +142,37 @@ app.MoEquipo = Backbone.Model.extend({
         return this;
     }
 });
+app.MoFamilia = Backbone.Model.extend({
+    idAttribute: '_id',
+    urlRoot: 'familia',
+    noIoBind: false,
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+        
+        if (!this.noIoBind) {
+            this.ioBind('update', this.serverChange, this);
+            this.ioBind('delete', this.serverDelete, this);
+        }
+    },
+    serverChange: function (data) {
+        data.fromServer = true;
+        this.set(data);
+    },
+    serverDelete: function (data) {
+        if (this.collection) {
+            this.collection.remove(this);
+        } 
+        else {
+            this.trigger('remove', this);
+        }
+        this.modelCleanup();
+    },
+    modelCleanup: function () {
+        this.ioUnbindAll();
+        return this;
+    }
+});
 /* ----------------------------------------- 2.-Colecciones ----------------------------------------- */
 window.CoClientesList = Backbone.Collection.extend({
     model: app.MoCliente,
@@ -232,6 +263,33 @@ window.CoContratosHistList = Backbone.Collection.extend({
 window.CoEquiposList = Backbone.Collection.extend({
     model: app.MoEquipo,
     url: 'equipos',
+    socket: app.socket,
+    initialize: function () {
+        _.bindAll(this, 'serverCreate', 'collectionCleanup');
+        this.ioBind('create', this.serverCreate, this);
+    },
+    serverCreate: function (data) {
+        // make sure no duplicates, just in case
+        var exists = this.get(data.id);
+        if (!exists) {
+            this.add(data);
+        } 
+        else {
+            data.fromServer = true;
+            exists.set(data);
+        }
+    },
+    collectionCleanup: function (callback) {
+        this.ioUnbindAll();
+        this.each(function (model) {
+            model.modelCleanup();
+        });
+        return this;
+    }
+});
+window.CoFamiliasList = Backbone.Collection.extend({
+    model: app.MoFamilia,
+    url: 'familias',
     socket: app.socket,
     initialize: function () {
         _.bindAll(this, 'serverCreate', 'collectionCleanup');
@@ -937,12 +995,22 @@ app.ViEquipos = Backbone.View.extend({
     el: '#pnlEquipoConsulta',
     events: {},
     initialize: function() {
-        this.gvEquipos = this.$el.find('table#gvEquipos');        
+        this.txtBusqueda = this.$el.find('#txtBusqueda');
+        this.cboFamilia = this.$el.find('#cboFamilia');
+        this.gvEquipos = this.$el.find('table#gvEquipos');
+        
         this.listenTo(app.CoEquipos, 'add', this.addTR);
+        this.listenTo(app.CoFamilias, 'sync', this.fillFamilias);
     },
-    /*-------------------------- Base --------------------------*/
     render: function(){
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
+    },
+    /*-------------------------- Eventso --------------------------*/
+    fillFamilias: function(data) {
+        var options = app.templates.cbo_familias({data:data.toJSON()}),
+            optDef = app.templates.cbo_option();
+        
+        this.cboFamilia.html(optDef).append(options);
     },
     addTR: function(model) {        
         var per = new app.ViEquipoTR({model:model}).render();        
@@ -1068,6 +1136,7 @@ function inicio(){
     app.CoContratos = new window.CoContratosList();
     app.CoContratosHist = new window.CoContratosHistList();
     app.CoEquipos = new window.CoEquiposList();
+    app.CoFamilias = new window.CoFamiliasList();
     
     new app.router;
 	app.ut = new utilerias();
@@ -1087,6 +1156,7 @@ function inicio(){
 	};
     
 	/*app.keytrap = new keytrap();*/
+    app.CoFamilias.fetch();
     app.CoEquipos.fetch();
     app.CoClientes.fetch();
     app.CoContratos.fetch();
@@ -1805,6 +1875,13 @@ function utilerias() {
 }
 
 function templates(){
+    Handlebars.registerHelper('isRentado', function(rentado){
+        if(rentado)
+		  return 'fa-circle-o';
+        
+        return 'fa-check-circle';
+	});
+    
     Handlebars.registerHelper('SetIconEntrega', function(feEntrega){
         if(feEntrega == null)
 		  return new Handlebars.SafeString('<span> |</span> <i class="fa fa-download"></i>');
@@ -1833,6 +1910,7 @@ function templates(){
 	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
         cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
         cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html()),
+        cbo_option = Handlebars.compile('<option value="0" selected>Todas</option>'),
         
         rp_contratos = Handlebars.compile($('#tmp_rp_contratos').html()),
         
@@ -1848,6 +1926,8 @@ function templates(){
 	return {
         alertas: alertas,
         cbo: cbo,
+        cbo_familias: cbo_familias,
+        cbo_option: cbo_option,
         
         rp_contratos: rp_contratos,
         

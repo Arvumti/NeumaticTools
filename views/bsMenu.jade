@@ -62,6 +62,8 @@ html
         td {{diasTrabajados}}
         td {{marca}}
         td {{idFamilia.nombre}}
+        td.icons
+            i(class='fa {{#isRentado rentado}}{{/isRentado}}')
         
     script(id='tmp_tr_cliente', type='text/x-handlebars-template')
         td.icons
@@ -410,17 +412,36 @@ html
                         |  Cancelar
 
         section(class='reveal-modal' data-reveal)#pnlEquipoConsulta
-            table(class='row special')#gvEquipos
-                thead
-                    tr
-                        td &nbsp
-                            i(class='fa fa-cogs fa-inverse')
-                        td NE
-                        td Nombre
-                        td Días
-                        td Marca                        
-                        td Familia
-                tbody &nbsp
+            div(class='row special')
+                div(class='small-12 columns')
+                    h3 Inventario de Equipos
+                    
+                div(class='small-6 columns')
+                    label Busqueda:
+                        div(class='row collapse')                            
+                            div(class='small-2 columns')
+                                span(class='prefix')
+                                    i(class='fa fa-search')
+                            div(class='small-10 columns')
+                                input(type='text' placeholder='Nombre o numero economico de equipo...')#txtBusqueda
+                div(class='small-6 columns')
+                    label Familia:
+                        select#cboFamilia
+                
+                div(class='small-12 columns')
+                    table(class='special')#gvEquipos
+                        thead
+                            tr
+                                td &nbsp
+                                    i(class='fa fa-cogs fa-inverse')
+                                td NE
+                                td Nombre
+                                td Días
+                                td Marca                        
+                                td Familia
+                                td &nbsp
+                                    i(class='fa fa-bar-chart-o')
+                        tbody &nbsp
         section(class='reveal-modal' data-reveal)#pnlContrato
             form(data-abide)
                 div.row

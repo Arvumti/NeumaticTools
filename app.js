@@ -495,6 +495,22 @@ io.sockets.on('connection', function (socket) {
                         }
                     });
         }
+    },
+    familias = {
+        read: function(data, callback) {    
+            mongo.familias.find({}, function (err, documents) {
+                console.log('----------------------------fetch familias mongo----------------------------------');
+                if(err) {
+                    console.log('Error:'+err);
+                    callback(null, {err:err});
+                }
+                else {
+                    console.log(documents);
+                    callback(null, documents);
+                }
+            });
+            
+        }
     };
     // create: called when we .save() our new todo
     // drop: called when we .destroy() our model
@@ -516,6 +532,8 @@ io.sockets.on('connection', function (socket) {
     socket.on('contrato:update', contratos.update);
     
     socket.on('contratosHist:read', contratosHist.read);
+    
+    socket.on('familias:read', familias.read);
 });
 
 /* ------------------------------- 5.-Passport ------------------------------- */
