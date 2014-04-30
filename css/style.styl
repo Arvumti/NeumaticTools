@@ -94,6 +94,21 @@ body, html
 #print-area
     display none
 /*------------------------- 21.-Custom --------------------*/
+.alert-box
+    a.close
+        font-weight bold
+        color #FFF
+    
+    &.pop-alert
+        margin 0.5em auto !important
+        sombra()
+        top 1em
+        t-sombra()
+        z-index 1000
+    
+    &.special
+        margin 0 auto
+        width 90% !important
 .big-checkbox 
 	padding 18px !important
 .big-checkbox:checked:after 
@@ -113,6 +128,12 @@ button.alert
     cursor pointer
 .isHidden
     display none
+.pnlAlert
+    heigh auto
+    left 0
+    position absolute
+    right 0
+    top 0
 .regular-checkbox 
 	appearance none
 	background-color #fafafa
@@ -144,7 +165,7 @@ table
         td.icons
             padding 0 !important
             text-align center
-            width 50px
+            width 60px
     
     tfoot
         ul

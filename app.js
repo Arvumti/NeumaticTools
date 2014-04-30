@@ -461,7 +461,7 @@ io.sockets.on('connection', function (socket) {
                 }
                 else {
                     //{ $inc: { views: 1 }}
-                    mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta }, rentado:false }, function (err) {
+                    mongo.equipos.findByIdAndUpdate(json.equipo, { $inc: { diasTrabajados: json.diasRenta }, rentado:false }, function (err, doc) {
                         if(err) {
                             console.log('Error:'+err);
                             callback(null, {err:err});
@@ -469,8 +469,8 @@ io.sockets.on('connection', function (socket) {
                         else {
                             //socket.emit('contrato/' + id + ':update', json);
                             //socket.broadcast.emit('contrato/' + id + ':update', json);
-                            socket.emit('equipo/' + json.equipo + ':update', {rentado:false});
-                            socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:false});
+                            socket.emit('equipo/' + json.equipo + ':update', {rentado:false, diasTrabajados: doc.diasTrabajados});
+                            socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:false, diasTrabajados: doc.diasTrabajados});
                             callback(null, {});
                         }
                     });
@@ -519,13 +519,7 @@ io.sockets.on('connection', function (socket) {
     // create: called when we .save() our new todo
     // drop: called when we .destroy() our model
     // read: called when we .fetch() our collection
-    // update: called when we .save() our model    
-    
-    socket.on('prueba', function() {
-        console.log('server prueba');
-        socket.emit('equipo/53555e2baded4a60182d5536:update', {rentado:true});
-        socket.broadcast.emit('equipo/53555e2baded4a60182d5536:update', {rentado:true});
-    });
+    // update: called when we .save() our model
     
     socket.on('equipo:create', equipos.create);
     socket.on('equipo:delete', equipos.drop);

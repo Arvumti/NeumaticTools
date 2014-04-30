@@ -79,6 +79,8 @@ html
         td.icons
             i(class='fa fa-bolt')
             {{SetIconEntrega feEntrega}}
+            span  | 
+            i(class='fa fa-ban')
         td {{#cliente}} {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} {{/cliente}}
         td {{folio}}
         td {{GetLocalDate feIni}}
@@ -95,6 +97,15 @@ html
             td.text-right $ {{precioDias}}
             td.text-right $ {{total}}
         
+    script(id='tmp_cancel_contratos', type='text/x-handlebars-template')
+        label ¿Desea cancelar el contarto?
+            textarea(placeholder='Razon por la que se cancelara el contrato....')#txaCancelacion
+    
+    script(id='tmp_alert', type='text/x-handlebars-template')
+        div(data-alert class='alert-box alert special altMenssage pop-alert')
+            span.spnTexto {{texto}}
+            a(href='#').close &times;
+            
     script(id='tmp_rp_contratos', type='text/x-handlebars-template')
         article.header
             figure
@@ -575,6 +586,7 @@ html
                             span.show-for-medium-up Cancelar
     br
     
+    div.pnlAlert
     div#print-area.rp-contrato &nbsp
     div(class='reveal-modal special' data-reveal)#popImprimir
         section.modal-header
@@ -608,8 +620,7 @@ html
                     button(type='button' class='button expand tiny alert custom-button')#btnCancelar
                         i(class='fa fa-ban') &nbsp
                         span.show-for-medium-up Cancelar
-        
-        
+    
         
         
         

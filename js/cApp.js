@@ -827,6 +827,7 @@ app.ViContratosHistorial = Backbone.View.extend({
 app.ViContratoTR = Backbone.View.extend({
     tagName: 'tr',
     events: {
+        'click .fa-ban'         : 'click_cancelar',
         'click .fa-bolt'        : 'click_visualizar',
         'click .fa-download'    : 'click_entrega'
     },
@@ -842,6 +843,23 @@ app.ViContratoTR = Backbone.View.extend({
         return this;
     },
     /*-------------------------- Eventos --------------------------*/
+    click_cancelar: function() {
+        app.ut.confirm({header:'Cancelar Contrato', body: app.templates.cancel_contratos({}), fnA: removeTR});
+        
+        var model = this.model;        
+        function removeTR(modal) {
+            var razon = modal.find('#txaCancelacion'),
+                close = true;
+            
+            if(razon.val().length == 0) {
+                app.ut.message({text:'Tiene que especificar una razon.'});
+                razon.focus();
+                close = false;
+            }
+            
+            modal.data('close', close);
+        }
+    },
     check_Visible: function() {
         if(this.model.get('visible') == false) {
             this.model.view = null;
@@ -1444,14 +1462,15 @@ function utilerias() {
 	};
     
     // { header, body, dataID, fnA, fnC }
-	function Confirm (p_valores) {
-		var modal = p_valores.el || $('#popMessage'),
+	function Confirm (json) {
+		var modal = json.el || $('#popMessage'),
 			validacion = false,
-			valores = p_valores || {},
+			valores = json || {},
 			header = valores.header || 'Modal',
 			body = valores.body || '/',
 			dataID = valores.dataID || 0;
 
+        modal.data('close', true);
 		modal.find('.modal-title').text(header);
 		modal.find('.modal-body').html(body);
 
@@ -1464,8 +1483,10 @@ function utilerias() {
 		function fnDone() {
             modal.off('close');
             if(valores.fnA && typeof valores.fnA === "function")
-                valores.fnA();
-			modal.foundation('reveal', 'close');
+                valores.fnA(modal);
+            
+            if(modal.data('close'))
+                modal.foundation('reveal', 'close');
 		}
 
 		function fnHide(e) {            
@@ -1555,16 +1576,16 @@ function utilerias() {
 		__loading.fadeOut();
 	}
 
-    function Message(p_message, p_time) {
-		var message = p_message || '',
-			time = p_time || 5000,
-			alerta = $(app.templates.mAlert({message:message}));
-
-		$('#pnlAlert').prepend(alerta);
-
-		setTimeout(function(){
-			alerta.find('.close').click();
-		}, time);
+    function Message(json) {
+		var message = json.text || '',
+			time = json.time || 2000,
+            alerta = $(app.templates.alerta({texto:message}));
+        
+        $.fx.speeds.slow = time;
+        $('.pnlAlert').prepend(alerta);
+		alerta.fadeOut('slow', function() {
+            alerta.find('.close').click();
+        });
 	}
     
     function Print(json) {
@@ -1949,11 +1970,13 @@ function templates(){
         return app.ut.toWords(value);
 	});    
     
-	var alertas = Handlebars.compile("<div data-alert class='alert-box alert radius'><label>{{message}}</label><a href='#' class='close'><i class='fa fa-times fa-inverse'></i></a></div>"),
+	var alerta = Handlebars.compile($('#tmp_alert').html()),
+        
         cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
         cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html()),
         cbo_option = Handlebars.compile('<option value="0" selected>Todas</option>'),
         
+        cancel_contratos = Handlebars.compile($('#tmp_cancel_contratos').html()),
         rp_contratos = Handlebars.compile($('#tmp_rp_contratos').html()),
         
         tr_cliente = Handlebars.compile($('#tmp_tr_cliente').html()),
@@ -1966,11 +1989,12 @@ function templates(){
         ;
 
 	return {
-        alertas: alertas,
+        alerta: alerta,
         cbo: cbo,
         cbo_familias: cbo_familias,
         cbo_option: cbo_option,
         
+        cancel_contratos: cancel_contratos,
         rp_contratos: rp_contratos,
         
         tr_cliente: tr_cliente,
