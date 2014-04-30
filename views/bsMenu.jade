@@ -78,9 +78,7 @@ html
     script(id='tmp_tr_contrato', type='text/x-handlebars-template')
         td.icons
             i(class='fa fa-bolt')
-            {{SetIconEntrega feEntrega}}
-            span  | 
-            i(class='fa fa-ban')
+            {{SetIconEntrega status}}
         td {{#cliente}} {{nombre.nombre}} {{nombre.apaterno}} {{nombre.amaterno}} {{/cliente}}
         td {{folio}}
         td {{GetLocalDate feIni}}
@@ -401,10 +399,13 @@ html
                         textarea(placeholder='Descripcion...')#txaDescripcion
                 
                 div(class='small-12 medium-6 columns')
+                    label Almacen:
+                        select#cboAlmacenes
+                div(class='small-12 medium-3 columns')
                     label Dias trabajados:
                         input(type='text' placeholder='Dias trabajados...' required pattern='integer')#txtDiasTrabajo
                         small.error Los dias trabajados son requeridos y tienen que ser un valor numerico
-                div(class='small-12 medium-6 columns')
+                div(class='small-12 medium-3 columns')
                     label Precio por dia:
                         input(type='text' placeholder='Precio por dia...' required pattern='integer')#txtPrecioDia
                         small.error El percio por dia es requerido y tiene que ser un valor numerico

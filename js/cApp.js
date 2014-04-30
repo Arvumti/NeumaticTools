@@ -45,6 +45,7 @@ app.MoCliente = Backbone.Model.extend({
     serverDelete: function (data) {
         if (this.collection) {
             this.collection.remove(this);
+            this.view.remove();
         } 
         else {
             this.trigger('remove', this);
@@ -71,7 +72,9 @@ app.MoContrato = Backbone.Model.extend({
         visible: true,
         activo: true,
         feEntrega: null,
-        diasRenta: 0
+        diasRenta: 0,
+        status: 1, //1:Abierto, 2:Cerrado, 3:Cancelado
+        motivoCan: null
     },
     urlRoot: 'contrato',
     noIoBind: false,
@@ -131,6 +134,7 @@ app.MoEquipo = Backbone.Model.extend({
     serverDelete: function (data) {
         if (this.collection) {
             this.collection.remove(this);
+            this.view.remove();
         } 
         else {
             this.trigger('remove', this);
@@ -210,7 +214,6 @@ window.CoContratosList = Backbone.Collection.extend({
         this.ioBind('create', this.serverCreate, this);
     },
     serverCreate: function (data) {
-        debugger;
         // make sure no duplicates, just in case
         var exists = this.get(data.id);
         if (!exists) {
@@ -774,10 +777,7 @@ app.ViContratoEntrega = Backbone.View.extend({
     },
     /*-------------------------- Eventos --------------------------*/
     click_btnAceptar: function() {
-        this.modelFake.save({feEntrega:this.data.final, diasRenta:this.data.dias});
-        this.modelFake.view.remove();
-        app.CoContratosHist.add(this.modelFake);
-        app.CoContratos.remove(this.modelFake);
+        this.modelFake.save({feEntrega:this.data.final, diasRenta:this.data.dias, status:2});
         
         this.hide();
     },
@@ -832,6 +832,7 @@ app.ViContratoTR = Backbone.View.extend({
         'click .fa-download'    : 'click_entrega'
     },
     initialize: function() {
+        this.listenTo(this.model, 'change:status', this.migrar);
         this.listenTo(this.model, 'change:visible', this.check_Visible);
         this.listenTo(this.model, 'destroy', this.remove);
     },
@@ -841,6 +842,13 @@ app.ViContratoTR = Backbone.View.extend({
         this.model.view = this;    
         
         return this;
+    },    
+    migrar: function(model) {
+        if(model.get('status') > 1) {
+            model.view.remove();
+            app.CoContratosHist.add(model);
+            app.CoContratos.remove(model);
+        }
     },
     /*-------------------------- Eventos --------------------------*/
     click_cancelar: function() {
@@ -856,6 +864,8 @@ app.ViContratoTR = Backbone.View.extend({
                 razon.focus();
                 close = false;
             }
+            else
+                model.save({status:3, motivoCan:razon.val()});
             
             modal.data('close', close);
         }
@@ -894,13 +904,21 @@ app.ViEquipo = Backbone.View.extend({
         this.tyaFamilias = this.form.find('#tyaFamilias');
         this.txtNombre = this.form.find('#txtNombre');
         this.txtMarca = this.form.find('#txtMarca');
-        this.txaDescripcion = this.form.find('#txaDescripcion');        
+        this.txaDescripcion = this.form.find('#txaDescripcion');
+        this.cboAlmacenes = this.form.find('#cboAlmacenes');
         this.txtDiasTrabajo = this.form.find('#txtDiasTrabajo');
         this.txtPrecioDia = this.form.find('#txtPrecioDia');
         
-        app.ut.getJson({url:'GetFamilias', done:done});
+        app.ut.getJson({url:'GetAlmacenes', done:doneAlm});
+        app.ut.getJson({url:'GetFamilias', done:doneFam});
         
-        function done(data) {
+        function doneAlm(data) {
+            app.cbos.almacenes = data;            
+            var options = app.templates.cbo({data:data});
+            
+            that.cboAlmacenes.html(options);
+        }
+        function doneFam(data) {
             app.cbos.familias = data;
             
             var arr = [];
@@ -988,6 +1006,7 @@ app.ViEquipo = Backbone.View.extend({
         var json = {
             sku             : this.txtNE.val(),
             idFamilia       : this.tyaFamilias.data('current'),
+            idAlmacen       : this.cboAlmacenes.val(),
             nombre          : this.txtNombre.val(),
             marca           : this.txtMarca.val(),
             descripcion     : this.txaDescripcion.val(),
@@ -1002,6 +1021,7 @@ app.ViEquipo = Backbone.View.extend({
         
         this.txtNE.val(json.sku);
         this.tyaFamilias.data('current', json.idFamilia).val(json.idFamilia.dKey);
+        this.cboAlmacenes.val(json.idAlmacen);
         this.txtNombre.val(json.nombre);
         this.txtMarca.val(json.marca);
         this.txaDescripcion.val(json.descripcion);
@@ -1094,7 +1114,6 @@ app.ViEquipoTR = Backbone.View.extend({
         this.$el.html(app.templates.tr_equipo(this.model.toJSON()));
     },
     check_Visible: function() {
-        debugger;
         if(this.model.get('visible') == false) {
             this.model.view = null;
             this.remove();
@@ -1945,9 +1964,9 @@ function templates(){
         return 'fa-check-circle';
 	});
     
-    Handlebars.registerHelper('SetIconEntrega', function(feEntrega){
-        if(feEntrega == null)
-		  return new Handlebars.SafeString('<span> |</span> <i class="fa fa-download"></i>');
+    Handlebars.registerHelper('SetIconEntrega', function(status){
+        if(status == 1)
+		  return new Handlebars.SafeString('<span> |</span> <i class="fa fa-download"></i> <span> |</span> <i class="fa fa-ban"></i>');
         
         return '';
 	});
@@ -1972,7 +1991,7 @@ function templates(){
     
 	var alerta = Handlebars.compile($('#tmp_alert').html()),
         
-        cbo = Handlebars.compile('{{#data}} <option value="{{id}}">{{nombre}}</option> {{/data}}'),
+        cbo = Handlebars.compile('{{#data}} <option value="{{_id}}">{{nombre}}</option> {{/data}}'),
         cbo_familias = Handlebars.compile($('#tmp_cbo_familias').html()),
         cbo_option = Handlebars.compile('<option value="0" selected>Todas</option>'),
         

@@ -69,8 +69,23 @@ app.get('/main', /*ensureAuthenticated,*/ function (req, res){
 
 app.get('/GetFamilias', function(req, res) {
     
-    mongo.familias.find({}, function (err, documents) {
+    mongo.familias.find({ activo:true }, function (err, documents) {
         console.log('----------------------------fetch familias mongo----------------------------------');
+        if(err) {
+            console.log('Error:'+err);
+            res.send('Error:'+err, 410);
+        }
+        else {
+            console.log(documents);
+            res.json(documents);
+        }
+    });
+    
+});
+app.get('/GetAlmacenes', function(req, res) {
+    
+    mongo.almacenes.find({ activo:true }, function (err, documents) {
+        console.log('----------------------------fetch almacenes mongo----------------------------------');
         if(err) {
             console.log('Error:'+err);
             res.send('Error:'+err, 410);
@@ -144,6 +159,10 @@ db.once('open', function callback(){
 			usuario 	: String,
 			password	: String
 		}, {versionKey: false}),
+        ScAlmacenes = mongoose.Schema({
+            nombre  : String,
+            activo  : Boolean
+		}, {versionKey: false}),
 		ScClientes = mongoose.Schema({
 			nombre          : {
                                 nombre 		: String,
@@ -174,6 +193,10 @@ db.once('open', function callback(){
             diasTrabajados  : Number,
             rentado         : Boolean,
             activo          : Boolean,
+            idAlmacen       : {
+                                type    : mongoose.Schema.Types.ObjectId, 
+                                ref     : 'almacenes'
+                            },
             idFamilia       : {
                                 type    : mongoose.Schema.Types.ObjectId, 
                                 ref     : 'familias'
@@ -186,7 +209,7 @@ db.once('open', function callback(){
             activo  : Boolean
 		}, {versionKey: false}),
         ScContratos = mongoose.Schema({
-            deposito: Number,
+            deposito    : Number,
             folio       : Number,
             feIni       : Date,
             feFin       : Date,
@@ -196,6 +219,8 @@ db.once('open', function callback(){
             recibio     : String,
             activo      : Boolean,
             diasRenta   : Number,
+            status      : Number, //1:Abierto, 2:Cerrado, 3:Cancelado
+            motivoCan   : String,
             
             cliente     : {
                 type    : mongoose.Schema.Types.ObjectId, 
@@ -210,6 +235,7 @@ db.once('open', function callback(){
     ScContratos.plugin(autoIncrement.plugin, { model: 'contratos', field: 'folio', startAt: 1, incrementBy: 1 });
     
 	mongo.usuarios = mongoose.model('usuarios', ScUsuarios);
+    mongo.almacenes = mongoose.model('almacenes', ScAlmacenes);
 	mongo.clientes = mongoose.model('clientes', ScClientes);
     mongo.equipos = mongoose.model('equipos', ScEquipos);
     mongo.familias = mongoose.model('familias', ScFamilias);
@@ -225,6 +251,7 @@ io.sockets.on('connection', function (socket) {
             console.log('save equipo');
             console.log(data);
             
+            var backup = _.extend({}, data);
             data.idFamilia = data.idFamilia._id;
             
             var equipo = new mongo.equipos(data);
@@ -236,10 +263,11 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    console.log(document);
-                    //socket.emit('equipos:create', document);
-                    //socket.broadcast.emit('equipos:create', document);
-                    callback(null, {_id: document._id});
+                    backup._id = document._id;
+                    console.log(backup);
+                    socket.emit('equipos:create', backup);
+                    socket.broadcast.emit('equipos:create', backup);
+                    callback(null, backup);
                 }
             });
         },
@@ -255,8 +283,7 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    //socket.emit('equipo/' + data._id + ':delete', data);
-                    //socket.broadcast.emit('equipo/' + data._id + ':delete', data);
+                    socket.broadcast.emit('equipo/' + data._id + ':delete', data);
                     callback(null, data);
                 }
             });
@@ -281,7 +308,8 @@ io.sockets.on('connection', function (socket) {
             console.log('update equipo');
             console.log(data);
             
-            var id = data._id.toString();    
+            var backup = _.extend({}, data),
+                id = data._id.toString();    
             json = data;
             delete json._id;
             
@@ -295,8 +323,7 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    //socket.emit('todo/' + id + ':update', json);
-                    //socket.broadcast.emit('todo/' + id + ':update', json);
+                    socket.broadcast.emit('equipo/' + id + ':update', backup);
                     callback(null, {});
                 }
             });
@@ -306,7 +333,8 @@ io.sockets.on('connection', function (socket) {
         create: function(data, callback) {
             console.log('save cliente');
             console.log(data);
-                
+            
+            var backup = _.extend({}, data);
             var cliente = new mongo.clientes(data);
             cliente.save(function (err, document){
                 console.log('----------------------------save cliente mongo----------------------------------');
@@ -316,10 +344,11 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    console.log(document);
-                    //socket.emit('clientes:create', document);
-                    //socket.broadcast.emit('clientes:create', document);
-                    callback(null, {_id: document._id});
+                    backup._id = document._id;
+                    console.log(backup);
+                    socket.emit('clientes:create', backup);
+                    socket.broadcast.emit('clientes:create', backup);
+                    callback(null, backup);
                 }
             });
         },
@@ -335,7 +364,6 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    socket.emit('cliente/' + data._id + ':delete', data);
                     socket.broadcast.emit('cliente/' + data._id + ':delete', data);
                     callback(null, data);
                 }
@@ -361,7 +389,8 @@ io.sockets.on('connection', function (socket) {
             console.log('update cliente');
             console.log(data);
             
-            var id = data._id.toString();    
+            var backup = _.extend({}, data),
+                id = data._id.toString();    
             json = data;
             delete json._id;
             
@@ -373,38 +402,19 @@ io.sockets.on('connection', function (socket) {
                     callback(null, {err:err});
                 }
                 else {
-                    //socket.emit('cliente/' + id + ':update', json);
-                    //socket.broadcast.emit('cliente/' + id + ':update', json);
+                    socket.broadcast.emit('cliente/' + id + ':update', backup);
                     callback(null, {});
                 }
             });
         }
     },
     contratos = {
-        read: function (data, callback){
-            console.log('');
-            console.log('');
-            console.log('===================================================');
-            console.log(data);            
-            //res.writeHead(200, { 'Content-Type': 'application/json'});
-            
-            mongo.contratos
-                    .find({ activo:true, feEntrega:null })
-                    .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
-                    .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
-                    .exec(function (err, documents) {
-                        if(err) {
-                            console.log('Error:'+err);
-                            callback(null, {err:err});
-                        }
-                        else
-                            callback(null, documents);
-                    });
-        },
         create: function(data, callback) {
             console.log('save contratos');
             console.log(data);
-            var json = data;
+            
+            var backup = _.extend({}, data),
+                json = data;
             
             json.folio = 0;
             if(json.cliente)
@@ -431,22 +441,52 @@ io.sockets.on('connection', function (socket) {
                         }
                         else {
                             //socket.emit('contrato/' + id + ':update', json);
-                            //socket.broadcast.emit('contrato/' + id + ':update', json);
                             socket.emit('equipo/' + json.equipo + ':update', {rentado:true});
                             socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:true});
-                            callback(null, jContrato);
+                            
+                            backup._id = document._id;
+                            backup.folio = document.folio;
+                            console.log(backup);
+                            socket.emit('contratos:create', backup);
+                            socket.broadcast.emit('contratos:create', backup);
+                            callback(null, backup);
                         }
                     });
                 }
             });
         },
+        read: function (data, callback){
+            console.log('');
+            console.log('');
+            console.log('===================================================');
+            console.log(data);            
+            //res.writeHead(200, { 'Content-Type': 'application/json'});
+            
+            mongo.contratos
+                    .find({ status: 1 })
+                    .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
+                    .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
+                    .exec(function (err, documents) {
+                        if(err) {
+                            console.log('Error:'+err);
+                            callback(null, {err:err});
+                        }
+                        else
+                            callback(null, documents);
+                    });
+        },
         update: function(data, callback) {
             console.log('update contrato');
             console.log(data);
             
-            var id = data._id.toString();    
+            var backup = _.extend({}, data),
+                id = data._id.toString();
             json = data;
-            delete json._id;    
+            delete json._id;
+            
+            var cliente = JSON.stringify(json.cliente),
+                equipo = JSON.stringify(json.equipo);
+            
             if(json.cliente)
                 json.cliente = json.cliente._id;
             if(json.equipo)
@@ -468,9 +508,10 @@ io.sockets.on('connection', function (socket) {
                         }
                         else {
                             //socket.emit('contrato/' + id + ':update', json);
-                            //socket.broadcast.emit('contrato/' + id + ':update', json);
                             socket.emit('equipo/' + json.equipo + ':update', {rentado:false, diasTrabajados: doc.diasTrabajados});
                             socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:false, diasTrabajados: doc.diasTrabajados});
+                            console.log(backup);
+                            socket.broadcast.emit('contrato/' + id + ':update', backup);
                             callback(null, {});
                         }
                     });
@@ -484,7 +525,7 @@ io.sockets.on('connection', function (socket) {
             //res.writeHead(200, { 'Content-Type': 'application/json'});
             
             mongo.contratos
-                    .find({ activo:true, feEntrega:{$ne:null} })
+                    .find({ status:{$ne:1} })
                     .populate('cliente', { nombre:1, direccion:1, identificacion:1, telefono:1 })
                     .populate('equipo', { nombre:1, marca:1, precioDia:1, sku:1 })
                     .exec(function (err, documents) {
