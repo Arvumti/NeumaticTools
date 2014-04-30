@@ -432,6 +432,8 @@ io.sockets.on('connection', function (socket) {
                         else {
                             //socket.emit('contrato/' + id + ':update', json);
                             //socket.broadcast.emit('contrato/' + id + ':update', json);
+                            socket.emit('equipo/' + json.equipo + ':update', {rentado:true});
+                            socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:true});
                             callback(null, jContrato);
                         }
                     });
@@ -467,6 +469,8 @@ io.sockets.on('connection', function (socket) {
                         else {
                             //socket.emit('contrato/' + id + ':update', json);
                             //socket.broadcast.emit('contrato/' + id + ':update', json);
+                            socket.emit('equipo/' + json.equipo + ':update', {rentado:false});
+                            socket.broadcast.emit('equipo/' + json.equipo + ':update', {rentado:false});
                             callback(null, {});
                         }
                     });
@@ -516,6 +520,12 @@ io.sockets.on('connection', function (socket) {
     // drop: called when we .destroy() our model
     // read: called when we .fetch() our collection
     // update: called when we .save() our model    
+    
+    socket.on('prueba', function() {
+        console.log('server prueba');
+        socket.emit('equipo/53555e2baded4a60182d5536:update', {rentado:true});
+        socket.broadcast.emit('equipo/53555e2baded4a60182d5536:update', {rentado:true});
+    });
     
     socket.on('equipo:create', equipos.create);
     socket.on('equipo:delete', equipos.drop);

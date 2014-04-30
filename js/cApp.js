@@ -993,7 +993,10 @@ app.ViEquipo = Backbone.View.extend({
 });
 app.ViEquipos = Backbone.View.extend({
     el: '#pnlEquipoConsulta',
-    events: {},
+    events: {
+        'change #cboFamilia' : 'change_cboFamilia',
+        'keyup #txtBusqueda' : 'keyup_txtBusqueda'
+    },
     initialize: function() {
         this.txtBusqueda = this.$el.find('#txtBusqueda');
         this.cboFamilia = this.$el.find('#cboFamilia');
@@ -1001,20 +1004,51 @@ app.ViEquipos = Backbone.View.extend({
         
         this.listenTo(app.CoEquipos, 'add', this.addTR);
         this.listenTo(app.CoFamilias, 'sync', this.fillFamilias);
+        
+        this.callback = null;
     },
-    render: function(){
+    render: function() {
         this.$el.css({visibility:'visible'}).removeClass('isHidden reveal-modal').addClass('active-view').fadeIn();  
     },
+    search: function() {
+        var busqueda = app.vi.Equipos.txtBusqueda.val(),
+            idFamilia = app.vi.Equipos.cboFamilia.find('option:selected')[0].id;
+        
+        app.CoEquipos.each(function(model) {
+            if( (model.get('sku').indexOf(busqueda) >= 0 || model.get('nombre').indexOf(busqueda) >= 0) && (model.get('idFamilia')._id == idFamilia || idFamilia == 0) ) {
+                model.set('visible', true);
+                if(model.view == null)
+                    app.vi.Equipos.addTR(model);
+            }
+            else
+                model.set('visible', false);
+        });
+    },
     /*-------------------------- Eventso --------------------------*/
+    addTR: function(model) {        
+        var per = new app.ViEquipoTR({model:model}).render();        
+        this.gvEquipos.children('tbody').prepend(per.$el);
+    },
+    change_cboFamilia: function() {
+        this.search();
+    },
     fillFamilias: function(data) {
-        var options = app.templates.cbo_familias({data:data.toJSON()}),
+        var options = app.templates.cbo_familias({data:_.pluck(data.sortBy('nombre'), 'attributes')}),
             optDef = app.templates.cbo_option();
         
         this.cboFamilia.html(optDef).append(options);
     },
-    addTR: function(model) {        
-        var per = new app.ViEquipoTR({model:model}).render();        
-        this.gvEquipos.children('tbody').prepend(per.$el);
+    keyup_txtBusqueda: function(e) {
+        if(e.keyCode == 13 && e.currentTarget.value.length > 0) {
+            clearTimeout(this.callback);
+            this.search();
+        }
+        else {
+            if(this.callback != null)
+                clearTimeout(this.callback);
+            
+            this.callback = setTimeout(this.search, 1000);
+        }
     }
 });
 app.ViEquipoTR = Backbone.View.extend({
@@ -1023,12 +1057,30 @@ app.ViEquipoTR = Backbone.View.extend({
         'click i.fa-repeat'  : 'click_isEdit',
         'click i.fa-trash-o' : 'click_isDelete'
     },
-    initialize: function() {        
+    initialize: function() {
+        this.listenTo(this.model, 'change:visible', this.check_Visible);
         this.listenTo(this.model, 'change', this.change_model);
         this.listenTo(this.model, 'destroy', this.remove);
     },
+    render: function(){
+        var jData = this.model.toJSON();
+        //this.$el.attr('id', this.model.cid);
+        
+        this.$el.html(app.templates.tr_equipo(jData));
+        this.model.view = this;
+        
+        return this;
+    },
+    /*-------------------------- Eventos --------------------------*/
     change_model: function() {
         this.$el.html(app.templates.tr_equipo(this.model.toJSON()));
+    },
+    check_Visible: function() {
+        debugger;
+        if(this.model.get('visible') == false) {
+            this.model.view = null;
+            this.remove();
+        }
     },
     click_isEdit: function() {
         app.vi.Equipo.show({title:'Modificar Equipo', model:this.model});
@@ -1052,16 +1104,6 @@ app.ViEquipoTR = Backbone.View.extend({
                 console.log(b);
             }
         }
-    },
-    /*-------------------------- Base --------------------------*/
-    render: function(){
-        var jData = this.model.toJSON();
-        //this.$el.attr('id', this.model.cid);
-        
-        this.$el.html(app.templates.tr_equipo(jData));
-        this.model.view = this;
-        
-        return this;
     }
 });
 /* ----------------------------------------- 4.-Rutas ----------------------------------------- */
